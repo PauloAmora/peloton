@@ -23,6 +23,7 @@
 #include "gc/gc_manager_factory.h"
 #include "settings/settings_manager.h"
 #include "threadpool/mono_queue_pool.h"
+#include "resource_tracking/resource_tracker.h"
 
 namespace peloton {
 
@@ -41,7 +42,6 @@ void PelotonInit::Initialize() {
   // start worker pool
   threadpool::MonoQueuePool::GetInstance().Startup();
 
-  int parallelism = (std::thread::hardware_concurrency() + 3) / 4;
   storage::DataTable::SetActiveTileGroupCount(parallelism);
   storage::DataTable::SetActiveIndirectionArrayCount(parallelism);
 
@@ -50,6 +50,8 @@ void PelotonInit::Initialize() {
 
   // start GC.
   gc::GCManagerFactory::GetInstance().StartGC();
+
+  ltm::ResourceTracker::GetInstance().StartRT();
 
   // start index tuner
   if (settings::SettingsManager::GetBool(settings::SettingId::index_tuner)) {

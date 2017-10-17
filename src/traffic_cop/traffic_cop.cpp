@@ -142,7 +142,7 @@ ResultType TrafficCop::ExecuteStatement(
     const std::vector<type::Value> &params, UNUSED_ATTRIBUTE const bool unnamed,
     std::shared_ptr<stats::QueryMetric::QueryParams> param_stats,
     const std::vector<int> &result_format, std::vector<StatementResult> &result,
-    int &rows_changed, UNUSED_ATTRIBUTE std::string &error_message,
+    int &rows_changed, UNUSED_ATTRIBUTE std::string &error_message, logging::WalLogManager *log_manager,
     logging::WalLogManager *log_manager,
     const size_t thread_id UNUSED_ATTRIBUTE) {
   if (settings::SettingsManager::GetInt(settings::SettingId::stats_mode) !=
@@ -150,15 +150,14 @@ ResultType TrafficCop::ExecuteStatement(
     stats::BackendStatsContext::GetInstance()->InitQueryMetric(statement,
                                                                param_stats);
   }
-  LOG_TRACE("Execute Statement of name: %s",
+  LOG_DEBUG("Execute Statement of name: %s",
             statement->GetStatementName().c_str());
-  LOG_TRACE("Execute Statement of query: %s",
+  LOG_DEBUG("Execute Statement of query: %s",
             statement->GetQueryString().c_str());
-  LOG_TRACE("Execute Statement Plan:\n%s",
+  LOG_DEBUG("Execute Statement Plan:\n%s",
             planner::PlanUtil::GetInfo(statement->GetPlanTree().get()).c_str());
   LOG_TRACE("Execute Statement Query Type: %s",
             statement->GetQueryTypeString().c_str());
-  LOG_TRACE("----QueryType: %d--------", (int)statement->GetQueryType());
   try {
     switch (statement->GetQueryType()) {
       case QueryType::QUERY_BEGIN:
@@ -172,6 +171,7 @@ ResultType TrafficCop::ExecuteStatement(
         ExecuteStatementPlan(statement->GetPlanTree(), params, result,
                              result_format, thread_id);
         if (is_queuing_) {
+            LOG_DEBUG("QUEUED OPERATION");
           return ResultType::QUEUING;
         }
         // if in ExecuteStatementPlan, these is no need to queue task, like
@@ -185,10 +185,10 @@ ResultType TrafficCop::ExecuteStatement(
 }
 
 ResultType TrafficCop::ExecuteStatementGetResult(int &rows_changed) {
-  LOG_TRACE("Statement executed. Result: %s",
+  LOG_DEBUG("Statement executed. Result: %s",
             ResultTypeToString(p_status_.m_result).c_str());
   rows_changed = p_status_.m_processed;
-  LOG_TRACE("rows_changed %d", rows_changed);
+  LOG_DEBUG("rows_changed %d", rows_changed);
   // is_queuing_ = false;
   return p_status_.m_result;
 }

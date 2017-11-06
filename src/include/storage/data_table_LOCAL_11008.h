@@ -51,7 +51,7 @@ class LogManager;
 }
 
 namespace concurrency {
-class TransactionContext;
+class Transaction;
 }
 
 namespace storage {
@@ -87,8 +87,7 @@ class DataTable : public AbstractTable {
   DataTable(catalog::Schema *schema, const std::string &table_name,
             const oid_t &database_oid, const oid_t &table_oid,
             const size_t &tuples_per_tilegroup, const bool own_schema,
-            const bool adapt_table, const bool is_catalog = false,
-            const peloton::LayoutType layout_type = peloton::LayoutType::ROW);
+            const bool adapt_table, const bool is_catalog = false);
 
   ~DataTable();
 
@@ -111,13 +110,13 @@ class DataTable : public AbstractTable {
   // as we implement logical-pointer indexing mechanism, targets_ptr is
   // required.
   bool InstallVersion(const AbstractTuple *tuple, const TargetList *targets_ptr,
-                      concurrency::TransactionContext *transaction,
+                      concurrency::Transaction *transaction,
                       ItemPointer *index_entry_ptr);
 
   // insert tuple in table. the pointer to the index entry is returned as
   // index_entry_ptr.
   ItemPointer InsertTuple(const Tuple *tuple,
-                          concurrency::TransactionContext *transaction,
+                          concurrency::Transaction *transaction,
                           ItemPointer **index_entry_ptr = nullptr);
   // designed for tables without primary key. e.g., output table used by
   // aggregate_executor.
@@ -125,7 +124,7 @@ class DataTable : public AbstractTable {
 
   // Insert tuple with ItemPointer provided explicitly
   bool InsertTuple(const AbstractTuple *tuple, ItemPointer location,
-      concurrency::TransactionContext *transaction, ItemPointer **index_entry_ptr);
+      concurrency::Transaction *transaction, ItemPointer **index_entry_ptr);
 
   //===--------------------------------------------------------------------===//
   // TILE GROUP
@@ -135,8 +134,6 @@ class DataTable : public AbstractTable {
   void AddTileGroupWithOidForRecovery(const oid_t &tile_group_id);
 
   void AddTileGroup(const std::shared_ptr<TileGroup> &tile_group);
-
-  void DeleteTileGroup(const std::size_t &tile_group_offset);
 
   // Offset is a 0-based number local to the table
   std::shared_ptr<storage::TileGroup> GetTileGroup(
@@ -163,7 +160,7 @@ class DataTable : public AbstractTable {
 
   trigger::TriggerList* GetTriggerList();
 
-  void UpdateTriggerListFromCatalog(concurrency::TransactionContext *txn);
+  void UpdateTriggerListFromCatalog(concurrency::Transaction *txn);
 
 
   //===--------------------------------------------------------------------===//
@@ -276,7 +273,7 @@ class DataTable : public AbstractTable {
   // the last argument is the index entry in primary index holding the new
   // tuple.
   bool InsertInIndexes(const AbstractTuple *tuple, ItemPointer location,
-                       concurrency::TransactionContext *transaction,
+                       concurrency::Transaction *transaction,
                        ItemPointer **index_entry_ptr);
 
   static void SetActiveTileGroupCount(const size_t active_tile_group_count) {
@@ -289,20 +286,15 @@ class DataTable : public AbstractTable {
   }
 
   // Claim a tuple slot in a tile group
-  ItemPointer GetEmptyTupleSlot(const storage::Tuple *tuple);
-
-  hash_t Hash() const;
-
-  bool Equals(const storage::DataTable &other) const;
-  bool operator==(const DataTable &rhs) const;
-  bool operator!=(const DataTable &rhs) const { return !(*this == rhs); }
+  ItemPointer GetEmptyTupleSlot(const storage::Tuple *tuple,
+                                bool check_constraint = true);
 
  protected:
   //===--------------------------------------------------------------------===//
   // INTEGRITY CHECKS
   //===--------------------------------------------------------------------===//
 
-  bool CheckNotNulls(const AbstractTuple *tuple, oid_t column_idx) const;
+  bool CheckNotNulls(const storage::Tuple *tuple, oid_t column_idx) const;
 //  bool MultiCheckNotNulls(const storage::Tuple *tuple,
 //                          std::vector<oid_t> cols) const;
 
@@ -312,7 +304,7 @@ class DataTable : public AbstractTable {
 
   // bool CheckExp(const storage::Tuple *tuple, oid_t column_idx) const;
 
-  bool CheckConstraints(const AbstractTuple *tuple) const;
+  bool CheckConstraints(const storage::Tuple *tuple) const;
 
   // add a tile group to the table
   oid_t AddDefaultTileGroup();
@@ -331,7 +323,7 @@ class DataTable : public AbstractTable {
 
   bool InsertInSecondaryIndexes(const AbstractTuple *tuple,
                                 const TargetList *targets_ptr,
-                                concurrency::TransactionContext *transaction,
+                                concurrency::Transaction *transaction,
                                 ItemPointer *index_entry_ptr);
 
   // check the foreign key constraints

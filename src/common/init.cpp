@@ -23,7 +23,7 @@
 #include "gc/gc_manager_factory.h"
 #include "settings/settings_manager.h"
 #include "threadpool/mono_queue_pool.h"
-#include "resource_tracking/resource_tracker.h"
+#include "ltm/resource_tracker.h"
 
 namespace peloton {
 

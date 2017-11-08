@@ -97,8 +97,7 @@ ResultType TrafficCop::BeginQueryHelper(const size_t thread_id) {
   return ResultType::SUCCESS;
 }
 
-
-//Pass the log manager to commit transaction
+// Pass the log manager to commit transaction
 ResultType TrafficCop::CommitQueryHelper(logging::WalLogManager *log_manager) {
   // do nothing if we have no active txns
   if (tcop_txn_state_.empty()) {
@@ -143,7 +142,7 @@ ResultType TrafficCop::ExecuteStatement(
     const std::vector<type::Value> &params, UNUSED_ATTRIBUTE const bool unnamed,
     std::shared_ptr<stats::QueryMetric::QueryParams> param_stats,
     const std::vector<int> &result_format, std::vector<StatementResult> &result,
-    int &rows_changed, UNUSED_ATTRIBUTE std::string &error_message, logging::WalLogManager *log_manager,
+    int &rows_changed, UNUSED_ATTRIBUTE std::string &error_message,
     logging::WalLogManager *log_manager,
     const size_t thread_id UNUSED_ATTRIBUTE) {
   if (settings::SettingsManager::GetInt(settings::SettingId::stats_mode) !=
@@ -291,10 +290,10 @@ void TrafficCop::ExecuteStatementPlanGetResult(
             p_status_.m_result = ResultType::ABORTED;
           }
       }
-  }
+    }
   } else {
-      //COMMIT; statement
-      p_status_.m_result = ResultType::QUEUING;
+    // COMMIT; statement
+    p_status_.m_result = ResultType::QUEUING;
     }
   } else {
     // COMMIT; statement

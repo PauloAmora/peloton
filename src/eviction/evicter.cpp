@@ -34,7 +34,7 @@ namespace eviction{
         bf->WriteData(output.Data(), output.Size());
 
 
-            fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
+        fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
 
         //  Call fsync
             FileUtil::FFlushFsync(f);

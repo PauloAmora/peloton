@@ -27,15 +27,15 @@ namespace eviction{
             auto tile = (*tg)->GetTile(offset);
             tile->SerializeTo(output, (*tg)->GetActiveTupleCount());
         }
-        //FileUtil::OpenFile("/tmp/log/evict_tg", "wb", f);
+        FileUtil::OpenFile("/tmp/log/evict_tg", "wb", f);
         bf->WriteData(output.Data(), output.Size());
 
 
-          //  fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
+        fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
 
         //  Call fsync
-            //FileUtil::FFlushFsync(f);
-            //FileUtil::CloseFile(f);
+            FileUtil::FFlushFsync(f);
+            FileUtil::CloseFile(f);
             delete bf;
         }
 

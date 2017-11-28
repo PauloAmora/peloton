@@ -695,6 +695,7 @@ void DataTable::DeleteTileGroup(const std::size_t &tile_group_offset){
     if(active_tile_groups_[number_of_tuples_ % active_tilegroup_count_] == tg)
         active_tile_groups_[number_of_tuples_ % active_tilegroup_count_].reset();
     tile_group_count_--;
+    tg.reset();
 }
 
 oid_t DataTable::AddDefaultTileGroup(const size_t &active_tile_group_id) {

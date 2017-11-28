@@ -22,8 +22,7 @@ void ResourceTracker::Running() {
    while(is_running_) {
     std::this_thread::sleep_for(std::chrono::microseconds(1000000));
     used_memory_ = GetValue() * 1024;
-    LOG_DEBUG("Used memory: %lld",used_memory_);
-    LOG_DEBUG("Total memory: %lld",total_memory_);
+    std::cout << "Used memory: " << used_memory_ << std::endl;
 
   }
 }

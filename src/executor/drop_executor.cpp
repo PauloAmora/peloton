@@ -51,8 +51,13 @@ bool DropExecutor::DExecute() {
       auto current_txn UNUSED_ATTRIBUTE= context_->GetTransaction();
 
 
-          auto table_object UNUSED_ATTRIBUTE = catalog::Catalog::GetInstance()->GetTableWithName(
+          storage::DataTable* table_object = nullptr;
+          try{ table_object = catalog::Catalog::GetInstance()->GetTableWithName(
               DEFAULT_DB_NAME, table_name, current_txn);
+          }catch(...){
+              return false;
+          }
+
           auto evicter = new eviction::Evicter();
 
         for (int i = 1; i<50; i++)

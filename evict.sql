@@ -1,1 +1,1 @@
-drop table foo;
+drop table usertable;

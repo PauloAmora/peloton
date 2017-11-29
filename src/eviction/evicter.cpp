@@ -5,14 +5,17 @@
 #include "util/file_util.h"
 #include "storage/tile.h"
 #include "util/output_buffer.h"
+#include "gc/gc_manager_factory.h"
 
 namespace peloton {
 namespace eviction{
     void Evicter::EvictDataFromTable (storage::DataTable* table){
+        //auto gc = gc::GCManagerFactory::GetInstance();
         for(uint offset = 0; offset < table->GetTileGroupCount(); offset++){
             auto tg = table->GetTileGroup(offset);
             if(tg->GetHeader()->IsEvictable()){
                 EvictTileGroup(&tg);
+
                 //table->DeleteTileGroup(offset);
                 tg.reset();
             }
@@ -27,15 +30,15 @@ namespace eviction{
             auto tile = (*tg)->GetTile(offset);
             tile->SerializeTo(output, (*tg)->GetActiveTupleCount());
         }
-        //FileUtil::OpenFile("/tmp/log/evict_tg", "wb", f);
+        FileUtil::OpenFile("/tmp/log/evict_tg", "wb", f);
         bf->WriteData(output.Data(), output.Size());
 
 
-          //  fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
+            fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
 
         //  Call fsync
-            //FileUtil::FFlushFsync(f);
-            //FileUtil::CloseFile(f);
+            FileUtil::FFlushFsync(f);
+            FileUtil::CloseFile(f);
             delete bf;
         }
 

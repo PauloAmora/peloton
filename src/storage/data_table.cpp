@@ -36,6 +36,7 @@
 #include "storage/tile_group_header.h"
 #include "storage/tuple.h"
 
+
 //===--------------------------------------------------------------------===//
 // Configuration Variables
 //===--------------------------------------------------------------------===//
@@ -62,8 +63,10 @@ DataTable::DataTable(catalog::Schema *schema, const std::string &table_name,
       database_oid(database_oid),
       table_name(table_name),
       tuples_per_tilegroup_(tuples_per_tilegroup),
+      filter_ (cuckoofilter::CuckooFilter<uint64_t, 4>(50000)),
       adapt_table_(adapt_table),
-      trigger_list_(new trigger::TriggerList()) {
+      trigger_list_(new trigger::TriggerList())
+{
   // Init default partition
   auto col_count = schema->GetColumnCount();
   for (oid_t col_itr = 0; col_itr < col_count; col_itr++) {
@@ -260,6 +263,7 @@ ItemPointer DataTable::GetEmptyTupleSlot(const storage::Tuple *tuple,
     // now we have already obtained a new tuple slot.
     if (tuple_slot != INVALID_OID) {
       tile_group_id = tile_group->GetTileGroupId();
+      filter_.Add(tuple->GetValue(0).GetAs<uint64_t>());
       break;
     }
   }

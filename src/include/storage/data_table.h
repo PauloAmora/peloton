@@ -21,6 +21,7 @@
 #include "common/item_pointer.h"
 #include "common/platform.h"
 #include "container/lock_free_array.h"
+#include "cuckoofilter/src/cuckoofilter.h"
 #include "index/index.h"
 #include "storage/abstract_table.h"
 #include "storage/indirection_array.h"
@@ -347,6 +348,8 @@ class DataTable : public AbstractTable {
 
   // number of tuples allocated per tilegroup
   size_t tuples_per_tilegroup_;
+
+  cuckoofilter::CuckooFilter<uint64_t,4> filter_;
 
   // TILE GROUPS
   LockFreeArray<oid_t> tile_groups_;

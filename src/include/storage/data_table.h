@@ -333,6 +333,8 @@ class DataTable : public AbstractTable {
 
   static size_t default_active_indirection_array_count_;
 
+  cuckoofilter::CuckooFilter<uint64_t,12> filter_;
+
  private:
   //===--------------------------------------------------------------------===//
   // MEMBERS
@@ -348,8 +350,6 @@ class DataTable : public AbstractTable {
 
   // number of tuples allocated per tilegroup
   size_t tuples_per_tilegroup_;
-
-  cuckoofilter::CuckooFilter<uint64_t,4> filter_;
 
   // TILE GROUPS
   LockFreeArray<oid_t> tile_groups_;

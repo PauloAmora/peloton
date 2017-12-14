@@ -149,8 +149,9 @@ bool SeqScanExecutor::DExecute() {
 
     bool acquire_owner = GetPlanNode<planner::AbstractScan>().IsForUpdate();
     auto current_txn = executor_context_->GetTransaction();
-
-    if(target_table_->filter_.Contain(predicate_->children_[1]))
+    auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
+    if(target_table_->filter_.Contain(t) == cuckoofilter::Status::NotFound)
+    { return false; }
 
     // Retrieve next tile group.
     while (current_tile_group_offset_ < table_tile_group_count_) {

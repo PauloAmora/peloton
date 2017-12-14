@@ -74,7 +74,7 @@ class AbstractExpression : public Printable {
 
   virtual bool IsNullable() const;
 
-  const AbstractExpression *GetChild(int index) const {
+  AbstractExpression *GetChild(int index) const {
     return GetModifiableChild(index);
   }
 

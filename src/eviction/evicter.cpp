@@ -15,8 +15,7 @@ namespace eviction{
             auto tg = table->GetTileGroup(offset);
             if(tg->GetHeader()->IsEvictable()){
                 EvictTileGroup(&tg);
-
-                //table->DeleteTileGroup(offset);
+                table->DeleteTileGroup(offset);
                 tg.reset();
             }
             }

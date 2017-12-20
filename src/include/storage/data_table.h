@@ -356,7 +356,7 @@ class DataTable : public AbstractTable {
 
   std::vector<std::shared_ptr<storage::TileGroup>> active_tile_groups_;
 
-  std::atomic<size_t> tile_group_count_ = ATOMIC_VAR_INIT(0);
+  //std::atomic<size_t> tile_group_count_ = ATOMIC_VAR_INIT(0);
 
   // INDIRECTIONS
   std::vector<std::shared_ptr<storage::IndirectionArray>>

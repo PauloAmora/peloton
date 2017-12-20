@@ -699,7 +699,7 @@ void DataTable::DeleteTileGroup(const std::size_t &tile_group_offset){
     catalog::Manager::GetInstance().DropTileGroup(tg->GetTileGroupId());
     if(active_tile_groups_[number_of_tuples_ % active_tilegroup_count_] == tg)
         active_tile_groups_[number_of_tuples_ % active_tilegroup_count_].reset();
-    tile_group_count_--;
+    //tile_group_count_--;
     tg.reset();
 }
 
@@ -730,7 +730,7 @@ oid_t DataTable::AddDefaultTileGroup(const size_t &active_tile_group_id) {
   // tile_group_count_.
   COMPILER_MEMORY_FENCE;
 
-  tile_group_count_++;
+  //tile_group_count_++;
 
   LOG_TRACE("Recording tile group : %u ", tile_group_id);
 
@@ -768,7 +768,7 @@ void DataTable::AddTileGroupWithOidForRecovery(const oid_t &tile_group_id) {
     // tile_group_count_.
     COMPILER_MEMORY_FENCE;
 
-    tile_group_count_++;
+    //tile_group_count_++;
 
     LOG_TRACE("Recording tile group : %u ", tile_group_id);
   }
@@ -791,12 +791,12 @@ void DataTable::AddTileGroup(const std::shared_ptr<TileGroup> &tile_group) {
   // tile_group_count_.
   COMPILER_MEMORY_FENCE;
 
-  tile_group_count_++;
+  //tile_group_count_++;
 
   LOG_TRACE("Recording tile group : %u ", tile_group_id);
 }
 
-size_t DataTable::GetTileGroupCount() const { return tile_group_count_; }
+size_t DataTable::GetTileGroupCount() const { return tile_groups_.GetSize(); }
 
 std::shared_ptr<storage::TileGroup> DataTable::GetTileGroup(
     const std::size_t &tile_group_offset) const {
@@ -832,7 +832,7 @@ void DataTable::DropTileGroups() {
   // Clear array
   tile_groups_.Clear(invalid_tile_group_id);
 
-  tile_group_count_ = 0;
+  //tile_group_count_ = 0;
 }
 
 //===--------------------------------------------------------------------===//

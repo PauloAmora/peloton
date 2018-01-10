@@ -58,19 +58,24 @@ size_t DataTable::default_active_indirection_array_count_ = 1;
 DataTable::DataTable(catalog::Schema *schema, const std::string &table_name,
                      const oid_t &database_oid, const oid_t &table_oid,
                      const size_t &tuples_per_tilegroup, const bool own_schema,
-                     const bool adapt_table, const bool is_catalog)
+                     const bool adapt_table, const bool is_catalog, UNUSED_ATTRIBUTE const peloton::LayoutType layout_type)
     : AbstractTable(table_oid, schema, own_schema),
-      filter_ (cuckoofilter::CuckooFilter<uint64_t, 12>(50000)),
       database_oid(database_oid),
       table_name(table_name),
       tuples_per_tilegroup_(tuples_per_tilegroup),
       adapt_table_(adapt_table),
+      is_catalog(is_catalog),
       trigger_list_(new trigger::TriggerList())
 {
   // Init default partition
   auto col_count = schema->GetColumnCount();
   for (oid_t col_itr = 0; col_itr < col_count; col_itr++) {
     default_partition_[col_itr] = std::make_pair(0, col_itr);
+    if(!is_catalog)
+    {
+        cuckoofilter::CuckooFilter<uint64_t, 12>* f = new cuckoofilter::CuckooFilter<uint64_t, 12>(500000);
+        filter_map_.insert(std::make_pair(col_itr, f));
+    }
   }
 
   if (is_catalog == true) {
@@ -255,8 +260,11 @@ ItemPointer DataTable::GetEmptyTupleSlot(const storage::Tuple *tuple) {
     // now we have already obtained a new tuple slot.
     if (tuple_slot != INVALID_OID) {
       tile_group_id = tile_group->GetTileGroupId();
-      auto t = tuple->GetValue(0).GetAs<uint>();
-      filter_.Add(t);
+      oid_t column_count = schema->GetColumnCount();
+      for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
+          if(schema->GetColumn(column_itr).IsInlined() && !is_catalog)
+              filter_map_.find(column_itr)->second->Add(tuple->GetValue(column_itr).GetAs<uint64_t>());
+      }
       break;
     }
   }

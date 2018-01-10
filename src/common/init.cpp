@@ -35,9 +35,9 @@ void PelotonInit::Initialize() {
   GC_THREAD_COUNT = 1;
   EPOCH_THREAD_COUNT = 1;
   MAX_CONCURRENCY = 10;
-
+  auto parallelism = std::thread::hardware_concurrency() + 3;
   // set max thread number.
-  thread_pool.Initialize(0, std::thread::hardware_concurrency() + 3);
+  thread_pool.Initialize(0, parallelism);
 
   // start worker pool
   threadpool::MonoQueuePool::GetInstance().Startup();

@@ -72,6 +72,7 @@ Schema::Schema(const std::vector<Column> &columns)
 
     column_names.push_back(columns[column_itr].GetName());
     is_inlined.push_back(columns[column_itr].IsInlined());
+
   }
 
   CreateTupleSchema(column_types, column_lengths, column_names, is_inlined);

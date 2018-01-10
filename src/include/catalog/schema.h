@@ -148,6 +148,7 @@ class Schema : public Printable {
     return uninlined_columns[column_id];
   }
 
+
   inline const std::vector<Column> &GetColumns() const { return columns; }
 
   // Return the number of columns in the schema for the tuple.

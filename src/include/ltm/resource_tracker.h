@@ -21,7 +21,7 @@
 #include "sys/types.h"
 #include "sys/sysinfo.h"
 
-#include "type/types.h"
+#include "common/internal_types.h"
 #include "common/logger.h"
 #include "common/init.h"
 #include "common/thread_pool.h"

@@ -166,6 +166,10 @@ class DataTable : public AbstractTable {
 
   void UpdateTriggerListFromCatalog(concurrency::TransactionContext *txn);
 
+  inline std::map<oid_t, cuckoofilter::CuckooFilter<uint64_t,12>*> GetFilterMap() const {
+    return filter_map_;
+  }
+
 
   //===--------------------------------------------------------------------===//
   // INDEX
@@ -343,7 +347,7 @@ class DataTable : public AbstractTable {
 
   static size_t default_active_indirection_array_count_;
 
-  cuckoofilter::CuckooFilter<uint64_t,12> filter_;
+
 
  private:
   //===--------------------------------------------------------------------===//
@@ -415,6 +419,11 @@ class DataTable : public AbstractTable {
 
   // layout samples mutex
   std::mutex layout_samples_mutex_;
+
+  // filters for columns
+  std::map<oid_t, cuckoofilter::CuckooFilter<uint64_t, 12>*> filter_map_;
+
+  bool is_catalog;
 
   // samples for layout tuning
   std::vector<brain::Sample> index_samples_;

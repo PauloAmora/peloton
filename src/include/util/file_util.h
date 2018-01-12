@@ -88,6 +88,8 @@ class FileUtil {
 
  static void FFlushFsync(FileHandle &file_handle);
 
+ static bool CreateFile(const char *complete_path);
+
  static bool OpenFile(const char *name, const char *mode, FileHandle &file_handle);
 
  static bool CloseFile(FileHandle &file_handle);

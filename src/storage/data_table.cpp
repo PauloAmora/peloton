@@ -266,6 +266,11 @@ ItemPointer DataTable::GetEmptyTupleSlot(const storage::Tuple *tuple) {
     // now we have already obtained a new tuple slot.
     if (tuple_slot != INVALID_OID) {
       tile_group_id = tile_group->GetTileGroupId();
+      oid_t column_count = schema->GetColumnCount();
+      for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
+          if(schema->GetColumn(column_itr).IsInlined() && !is_catalog)
+              filter_map_.find(column_itr)->second->Add(tuple->GetValue(column_itr).GetAs<uint64_t>());
+      }
       break;
     }
   }

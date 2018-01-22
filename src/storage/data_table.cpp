@@ -733,6 +733,38 @@ oid_t DataTable::AddDefaultTileGroup(const size_t &active_tile_group_id) {
   return tile_group_id;
 }
 
+
+
+void DataTable::PrepareTupleSlotForPhysicalRecovery(ItemPointer tuple_slot) {
+  // Check if the table has the tile group.
+  auto tg_id = tuple_slot.block;
+
+  auto &manager = catalog::Manager::GetInstance();
+  auto tg = manager.GetTileGroup(tg_id).get();
+
+  if (tg == nullptr) {
+    tg = manager.GetTileGroup(tg_id).get();
+    // Double check after we get the lock
+    if (tg == nullptr) {
+      // Allocate the tile group with the id
+      auto col_map = GetTileGroupLayout();
+      tg = GetTileGroupWithLayout(col_map);
+
+      // printf("[JX] Prepare tilegorup %d\n", (int) tg_id);
+
+      // Set the tg's tuple count to MAX tuple count
+      auto shared_tg = std::shared_ptr<TileGroup>(tg);
+      manager.AddTileGroup(tg_id, shared_tg);
+
+      // Note: We don't need to modify the last_tile_groups here.
+
+      tile_groups_.Append(tg_id);
+      COMPILER_MEMORY_FENCE;
+      tile_group_count_++;
+    }
+  }
+}
+
 void DataTable::AddTileGroupWithOidForRecovery(const oid_t &tile_group_id) {
   PL_ASSERT(tile_group_id);
 

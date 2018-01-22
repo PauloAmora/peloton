@@ -2204,17 +2204,25 @@ std::ostream &operator<<(std::ostream &os, const GarbageCollectionType &type) {
 // LoggingType - String Utilities
 //===--------------------------------------------------------------------===//
 
+
+
 std::string LoggingTypeToString(LoggingType type) {
   switch (type) {
-    case LoggingType::INVALID: {
+    case LoggingType::LOGGING_TYPE_INVALID: {
       return "INVALID";
     }
-    case LoggingType::OFF: {
-      return "OFF";
+    case LoggingType::LOGGING_TYPE_PHYLOG: {
+      return "PHYLOG";
     }
-    case LoggingType::ON: {
-      return "ON";
+    case LoggingType::LOGGING_TYPE_PHYSICAL: {
+      return "PHYSICAL";
     }
+  case LoggingType::LOGGING_TYPE_REORDERED_PHYLOG: {
+    return "REORDERED_PHYLOG";
+  }
+  case LoggingType::LOGGING_TYPE_REORDERED_PHYSICAL: {
+    return "REORDERED_PHYSICAL";
+  }
     default: {
       throw ConversionException(
           StringUtil::Format("No string conversion for LoggingType value '%d'",
@@ -2227,16 +2235,20 @@ std::string LoggingTypeToString(LoggingType type) {
 LoggingType StringToLoggingType(const std::string &str) {
   std::string upper_str = StringUtil::Upper(str);
   if (upper_str == "INVALID") {
-    return LoggingType::INVALID;
-  } else if (upper_str == "OFF") {
-    return LoggingType::OFF;
-  } else if (upper_str == "ON") {
-    return LoggingType::ON;
+    return LoggingType::LOGGING_TYPE_INVALID;
+  } else if (upper_str == "PHYLOG") {
+    return LoggingType::LOGGING_TYPE_PHYLOG;
+  } else if (upper_str == "PHYSICAL") {
+    return LoggingType::LOGGING_TYPE_PHYSICAL;
+  } else if (upper_str == "REORDERED_PHYLOG") {
+    return LoggingType::LOGGING_TYPE_REORDERED_PHYLOG;
+  } else if (upper_str == "REORDERED_PHYSICAL") {
+    return LoggingType::LOGGING_TYPE_REORDERED_PHYSICAL;
   } else {
     throw ConversionException(StringUtil::Format(
         "No LoggingType conversion from string '%s'", upper_str.c_str()));
   }
-  return LoggingType::INVALID;
+  return LoggingType::LOGGING_TYPE_INVALID;
 }
 
 std::ostream &operator<<(std::ostream &os, const LoggingType &type) {

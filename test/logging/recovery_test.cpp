@@ -150,7 +150,7 @@
 
 //     // First write a begin record
 //     CopySerializeOutput output_buffer_begin;
-//     logging::TransactionRecord record_begin(LOGRECORD_TYPE_TRANSACTION_BEGIN,
+//     logging::TransactionRecord record_begin(LogRecordType::TRANSACTION_BEGIN,
 //                                             i + 2);
 //     record_begin.Serialize(output_buffer_begin);
 
@@ -189,7 +189,7 @@
 // //     }
 
 // //     // Now write commit
-// //     logging::TransactionRecord record_commit(LOGRECORD_TYPE_TRANSACTION_COMMIT,
+// //     logging::TransactionRecord record_commit(LogRecordType::TRANSACTION_COMMIT,
 // //                                              i + 2);
 
 // //     CopySerializeOutput output_buffer_commit;
@@ -200,7 +200,7 @@
 
 // //     // Now write delimiter
 // //     CopySerializeOutput output_buffer_delim;
-// //     logging::TransactionRecord record_delim(LOGRECORD_TYPE_ITERATION_DELIMITER,
+// //     logging::TransactionRecord record_delim(LogRecordType::ITERATION_DELIMITER,
 // //                                             i + 2);
 
 // //     record_delim.Serialize(output_buffer_delim);
@@ -299,7 +299,7 @@
 //   type::Value val2 = (tuples[0]->GetValue(2));
 //   type::Value val3 = (tuples[0]->GetValue(3));
 //   auto curr_rec = new logging::TupleRecord(
-//       LOGRECORD_TYPE_TUPLE_INSERT, test_commit_id, recovery_table->GetOid(),
+//       LogRecordType::TUPLE_INSERT, test_commit_id, recovery_table->GetOid(),
 //       ItemPointer(100, 5), INVALID_ITEMPOINTER, tuples[0], DEFAULT_DB_ID);
 //   curr_rec->SetTuple(tuples[0]);
 //   fel.InsertTuple(curr_rec);
@@ -352,7 +352,7 @@
 //   type::Value val3 = (tuples[0]->GetValue(3));
 
 //   auto curr_rec = new logging::TupleRecord(
-//       LOGRECORD_TYPE_TUPLE_UPDATE, test_commit_id, recovery_table->GetOid(),
+//       LogRecordType::TUPLE_UPDATE, test_commit_id, recovery_table->GetOid(),
 //       ItemPointer(100, 5), ItemPointer(100, 4), tuples[0], DEFAULT_DB_ID);
 //   curr_rec->SetTuple(tuples[0]);
 //   fel.UpdateTuple(curr_rec);
@@ -400,7 +400,7 @@
 //   cid_t test_commit_id = 10;
 
 //   auto curr_rec = new logging::TupleRecord(
-//       LOGRECORD_TYPE_TUPLE_UPDATE, test_commit_id, recovery_table->GetOid(),
+//       LogRecordType::TUPLE_UPDATE, test_commit_id, recovery_table->GetOid(),
 //       INVALID_ITEMPOINTER, ItemPointer(100, 4), nullptr, DEFAULT_DB_ID);
 //   fel.DeleteTuple(curr_rec);
 
@@ -429,7 +429,7 @@
 //   cid_t test_commit_id = 10;
 
 //   auto curr_rec = new logging::TupleRecord(
-//       LOGRECORD_TYPE_TUPLE_UPDATE, test_commit_id + 1, recovery_table->GetOid(),
+//       LogRecordType::TUPLE_UPDATE, test_commit_id + 1, recovery_table->GetOid(),
 //       INVALID_ITEMPOINTER, ItemPointer(100, 5), nullptr, DEFAULT_DB_ID);
 //   fel.DeleteTuple(curr_rec);
 //   delete curr_rec;
@@ -437,7 +437,7 @@
 //   EXPECT_EQ(recovery_table->GetTileGroupCount(), 2);
 
 //   curr_rec = new logging::TupleRecord(
-//       LOGRECORD_TYPE_TUPLE_INSERT, test_commit_id, recovery_table->GetOid(),
+//       LogRecordType::TUPLE_INSERT, test_commit_id, recovery_table->GetOid(),
 //       ItemPointer(100, 5), INVALID_ITEMPOINTER, tuples[0], DEFAULT_DB_ID);
 
 //   curr_rec->SetTuple(tuples[0]);

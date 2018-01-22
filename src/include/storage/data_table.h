@@ -286,6 +286,9 @@ class DataTable : public AbstractTable {
     default_active_indirection_array_count_ = active_indirection_array_count;
   }
 
+  // Get a tuple slot at certain position for physical recovery
+  void PrepareTupleSlotForPhysicalRecovery(ItemPointer tuple_slot);
+
   // Claim a tuple slot in a tile group
   ItemPointer GetEmptyTupleSlot(const storage::Tuple *tuple);
 
@@ -294,6 +297,12 @@ class DataTable : public AbstractTable {
   bool Equals(const storage::DataTable &other) const;
   bool operator==(const DataTable &rhs) const;
   bool operator!=(const DataTable &rhs) const { return !(*this == rhs); }
+
+  // add a tile group to the table
+  oid_t AddDefaultTileGroup();
+  // add a tile group to the table. replace the active_tile_group_id-th active
+  // tile group.
+  oid_t AddDefaultTileGroup(const size_t &active_tile_group_id);
 
  protected:
   //===--------------------------------------------------------------------===//
@@ -312,11 +321,6 @@ class DataTable : public AbstractTable {
 
   bool CheckConstraints(const AbstractTuple *tuple) const;
 
-  // add a tile group to the table
-  oid_t AddDefaultTileGroup();
-  // add a tile group to the table. replace the active_tile_group_id-th active
-  // tile group.
-  oid_t AddDefaultTileGroup(const size_t &active_tile_group_id);
 
   oid_t AddDefaultIndirectionArray(const size_t &active_indirection_array_id);
 

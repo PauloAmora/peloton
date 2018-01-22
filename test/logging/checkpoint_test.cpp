@@ -161,7 +161,7 @@
 // //   EXPECT_EQ(records.size(),
 // //             TESTS_TUPLES_PER_TILEGROUP * table_tile_group_count);
 // //   for (unsigned int i = 0; i < records.size(); i++) {
-// //     EXPECT_EQ(records[i]->GetType(), LOGRECORD_TYPE_WAL_TUPLE_INSERT);
+// //     EXPECT_EQ(records[i]->GetType(), LogRecordType::WAL_TUPLE_INSERT);
 // //   }
 // // }
 

@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "common/macros.h"
 #include "common/internal_types.h"
 
 namespace peloton {
@@ -30,35 +29,30 @@ private:
   const static size_t log_buffer_capacity_ = 1024 * 1024 * 32; // 32 MB
 
 public:
-  LogBuffer(const size_t thread_id, const size_t eid) : 
-      thread_id_(thread_id), eid_(eid), size_(0){
-    data_ = new char[log_buffer_capacity_];
+  LogBuffer(size_t backend_id, size_t eid) : worker_id_(backend_id), eid_(eid), size_(0){
     PL_MEMSET(data_, 0, log_buffer_capacity_);
   }
-  ~LogBuffer() {
-    delete[] data_;
-    data_ = nullptr;
-  }
+  ~LogBuffer() {}
 
-  inline void Reset() { size_ = 0; eid_ = INVALID_EID; }
+  inline void Reset() { size_ = 0; eid_ = INVALID_EID;}
 
   inline char *GetData() { return data_; }
 
   inline size_t GetSize() { return size_; }
 
-  inline size_t GetEpochId() { return eid_; }
+  inline size_t GetEid() { return eid_; }
 
-  inline size_t GetThreadId() { return thread_id_; }
+  inline size_t GetWorkerId() { return worker_id_; }
 
   inline bool Empty() { return size_ == 0; }
 
   bool WriteData(const char *data, size_t len);
 
 private:
-  size_t thread_id_;
+  size_t worker_id_;
   size_t eid_;
   size_t size_;
-  char* data_;
+  char data_[log_buffer_capacity_];
 };
 
 }

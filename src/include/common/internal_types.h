@@ -867,10 +867,19 @@ std::ostream &operator<<(std::ostream &os, const SetOpType &type);
 // Logging + Recovery Types
 //===--------------------------------------------------------------------===//
 
-enum class LoggingType {
-  INVALID = INVALID_TYPE_ID,
-  OFF = 1,  // turn off GC
-  ON = 2    // turn on GC
+// Logging type
+enum LoggingType {
+  LOGGING_TYPE_INVALID = 0,
+  LOGGING_TYPE_PHYLOG, // physiological logging
+  LOGGING_TYPE_REORDERED_PHYLOG,  // reordered physiological logging
+  LOGGING_TYPE_PHYSICAL, // physical logging
+  LOGGING_TYPE_REORDERED_PHYSICAL, // reordered physical logging
+};
+
+enum CheckpointType {
+  CHECKPOINT_TYPE_INVALID = 0,
+  CHECKPOINT_TYPE_PHYLOG = 1,
+  CHECKPOINT_TYPE_PHYSICAL = 2,
 };
 std::string LoggingTypeToString(LoggingType type);
 LoggingType StringToLoggingType(const std::string &str);

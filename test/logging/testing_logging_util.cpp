@@ -31,7 +31,7 @@
 //       auto &tuple = tuples[(block - 1) * tile_group_size + offset];
 //       PL_ASSERT(tuple->GetSchema());
 //       logging::TupleRecord record(
-//           LOGRECORD_TYPE_WAL_TUPLE_INSERT, INITIAL_TXN_ID, INVALID_OID,
+//           LogRecordType::WAL_TUPLE_INSERT, INITIAL_TXN_ID, INVALID_OID,
 //           location, INVALID_ITEMPOINTER, tuple.get(), DEFAULT_DB_ID);
 //       record.SetTuple(tuple.get());
 //       records.push_back(record);
@@ -54,7 +54,7 @@
 //       ItemPointer location(block + tile_group_start_oid, offset);
 //       auto &tuple = tuples[(block - 1) * tile_group_size + offset];
 //       PL_ASSERT(tuple->GetSchema());
-//       logging::TupleRecord record(LOGRECORD_TYPE_WAL_TUPLE_INSERT, block + 1,
+//       logging::TupleRecord record(LogRecordType::WAL_TUPLE_INSERT, block + 1,
 //                                   INVALID_OID, location, INVALID_ITEMPOINTER,
 //                                   tuple.get(), DEFAULT_DB_ID);
 //       record.SetTuple(tuple.get());
@@ -66,7 +66,7 @@
 //                          table_tile_group_count + i);
 //     auto &tuple = tuples[tile_group_size * table_tile_group_count + i];
 //     PL_ASSERT(tuple->GetSchema());
-//     logging::TupleRecord record(LOGRECORD_TYPE_WAL_TUPLE_INSERT, 1000,
+//     logging::TupleRecord record(LogRecordType::WAL_TUPLE_INSERT, 1000,
 //                                 INVALID_OID, location, INVALID_ITEMPOINTER,
 //                                 tuple.get(), DEFAULT_DB_ID);
 //     record.SetTuple(tuple.get());
@@ -77,7 +77,7 @@
 //     auto &tuple = tuples[tile_group_size * table_tile_group_count +
 //                          out_of_range_tuples + i];
 //     PL_ASSERT(tuple->GetSchema());
-//     logging::TupleRecord record(LOGRECORD_TYPE_WAL_TUPLE_DELETE, 4, INVALID_OID,
+//     logging::TupleRecord record(LogRecordType::WAL_TUPLE_DELETE, 4, INVALID_OID,
 //                                 INVALID_ITEMPOINTER, location, nullptr,
 //                                 DEFAULT_DB_ID);
 //     record.SetTuple(tuple.get());
@@ -228,7 +228,7 @@
 //       LOG_TRACE("Execute Insert txn %d", (int)cid);
 //       auto tuple = TestingLoggingUtil::BuildTuples(table, 1, false, false)[0];
 //       std::unique_ptr<logging::LogRecord> tuple_record(
-//           backend_logger->GetTupleRecord(LOGRECORD_TYPE_TUPLE_INSERT, cid, 1,
+//           backend_logger->GetTupleRecord(LogRecordType::TUPLE_INSERT, cid, 1,
 //                                          DEFAULT_DB_ID, INVALID_ITEMPOINTER,
 //                                          INVALID_ITEMPOINTER, tuple.get()));
 //       backend_logger->Log(tuple_record.get());
@@ -239,7 +239,7 @@
 //       LOG_TRACE("Execute Update txn %d", (int)cid);
 //       auto tuple = TestingLoggingUtil::BuildTuples(table, 1, false, false)[0];
 //       std::unique_ptr<logging::LogRecord> tuple_record(
-//           backend_logger->GetTupleRecord(LOGRECORD_TYPE_TUPLE_UPDATE, cid, 1,
+//           backend_logger->GetTupleRecord(LogRecordType::TUPLE_UPDATE, cid, 1,
 //                                          DEFAULT_DB_ID, INVALID_ITEMPOINTER,
 //                                          INVALID_ITEMPOINTER, tuple.get()));
 //       backend_logger->Log(tuple_record.get());
@@ -250,7 +250,7 @@
 //       LOG_TRACE("Execute Delete txn %d", (int)cid);
 //       auto tuple = TestingLoggingUtil::BuildTuples(table, 1, false, false)[0];
 //       std::unique_ptr<logging::LogRecord> tuple_record(
-//           backend_logger->GetTupleRecord(LOGRECORD_TYPE_TUPLE_DELETE, cid, 1,
+//           backend_logger->GetTupleRecord(LogRecordType::TUPLE_DELETE, cid, 1,
 //                                          DEFAULT_DB_ID, INVALID_ITEMPOINTER,
 //                                          INVALID_ITEMPOINTER, tuple.get()));
 //       backend_logger->Log(tuple_record.get());
@@ -265,7 +265,7 @@
 //     case LOGGING_OP_COMMIT: {
 //       LOG_TRACE("Execute Commit txn %d", (int)cid);
 //       std::unique_ptr<logging::LogRecord> record(new logging::TransactionRecord(
-//           LOGRECORD_TYPE_TRANSACTION_COMMIT, cid));
+//           LogRecordType::TRANSACTION_COMMIT, cid));
 //       PL_ASSERT(backend_logger);
 //       backend_logger->Log(record.get());
 //       break;
@@ -273,7 +273,7 @@
 //     case LOGGING_OP_ABORT: {
 //       LOG_TRACE("Execute Abort txn %d", (int)cid);
 //       std::unique_ptr<logging::LogRecord> record(new logging::TransactionRecord(
-//           LOGRECORD_TYPE_TRANSACTION_ABORT, cid));
+//           LogRecordType::TRANSACTION_ABORT, cid));
 //       PL_ASSERT(backend_logger);
 //       backend_logger->Log(record.get());
 //       break;

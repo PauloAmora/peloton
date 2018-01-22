@@ -19,7 +19,8 @@
 #include "common/platform.h"
 #include "concurrency/transaction_context.h"
 #include "gc/gc_manager_factory.h"
-#include "logging/log_manager_factory.h"
+#include "logging/log_manager.h"
+#include "logging/durability_factory.h"
 #include "settings/settings_manager.h"
 
 namespace peloton {
@@ -753,13 +754,20 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
   //////////////////////////////////////////////////////////
 
   auto &manager = catalog::Manager::GetInstance();
-  auto &log_manager = logging::LogManager::GetInstance();
-
-  log_manager.StartLogging();
+  auto &log_manager = logging::DurabilityFactory::GetLoggerInstance();
+  auto logging_type = logging::DurabilityFactory::GetLoggingType();
 
   // generate transaction id.
   cid_t end_commit_id = current_txn->GetCommitId();
 
+  if (logging_type != LOGGING_TYPE_INVALID) {
+      log_manager.StartTxn(current_txn);
+    }
+  if (logging_type == LOGGING_TYPE_REORDERED_PHYSICAL) {
+      ((logging::ReorderedPhysicalLogManager *) (&log_manager))->StartPersistTxn();
+    } else if (logging_type == LOGGING_TYPE_REORDERED_PHYLOG) {
+      ((logging::ReorderedPhyLogLogManager*)(&log_manager))->StartPersistTxn();
+    }
   auto &rw_set = current_txn->GetReadWriteSet();
   auto &rw_object_set = current_txn->GetCreateDropSet();
 
@@ -816,6 +824,10 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
                                                 end_commit_id);
         new_tile_group_header->SetEndCommitId(new_version.offset, cid);
 
+        // Set the header for logger
+        log_manager.MarkTupleCommitEpochId(new_tile_group_header, new_version.offset);
+
+
         COMPILER_MEMORY_FENCE;
 
         tile_group_header->SetEndCommitId(tuple_slot, end_commit_id);
@@ -832,8 +844,11 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
         gc_set->operator[](tile_group_id)[tuple_slot] =
             GCVersionType::COMMIT_UPDATE;
 
-        log_manager.LogUpdate(new_version);
-
+        if (logging_type == LOGGING_TYPE_REORDERED_PHYSICAL) {
+                  ((logging::ReorderedPhysicalLogManager*)(&log_manager))->LogUpdate(new_version, ItemPointer(tile_group_id, tuple_slot));
+                } else if (logging_type == LOGGING_TYPE_REORDERED_PHYLOG) {
+                  ((logging::ReorderedPhyLogLogManager*)(&log_manager))->LogUpdate(new_version);
+                }
       } else if (tuple_entry.second == RWType::DELETE) {
         ItemPointer new_version =
             tile_group_header->GetPrevItemPointer(tuple_slot);
@@ -845,6 +860,10 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
         new_tile_group_header->SetBeginCommitId(new_version.offset,
                                                 end_commit_id);
         new_tile_group_header->SetEndCommitId(new_version.offset, cid);
+
+
+        // Set the header for logger
+                log_manager.MarkTupleCommitEpochId(new_tile_group_header, new_version.offset);
 
         COMPILER_MEMORY_FENCE;
 
@@ -865,7 +884,11 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
         gc_set->operator[](tile_group_id)[tuple_slot] =
             GCVersionType::COMMIT_DELETE;
 
-        log_manager.LogDelete(ItemPointer(tile_group_id, tuple_slot));
+        if (logging_type == LOGGING_TYPE_REORDERED_PHYSICAL) {
+                  ((logging::ReorderedPhysicalLogManager*)(&log_manager))->LogDelete(new_version, ItemPointer(tile_group_id, tuple_slot));
+                } else if (logging_type == LOGGING_TYPE_REORDERED_PHYLOG) {
+                  ((logging::ReorderedPhyLogLogManager*)(&log_manager))->LogDelete(ItemPointer(tile_group_id, tuple_slot));
+                }
 
       } else if (tuple_entry.second == RWType::INSERT) {
         PL_ASSERT(tile_group_header->GetTransactionId(tuple_slot) ==
@@ -874,6 +897,9 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
         tile_group_header->SetBeginCommitId(tuple_slot, end_commit_id);
         tile_group_header->SetEndCommitId(tuple_slot, MAX_CID);
 
+        // Set the header for logger
+                log_manager.MarkTupleCommitEpochId(tile_group_header, tuple_slot);
+
         // we should set the version before releasing the lock.
         COMPILER_MEMORY_FENCE;
 
@@ -881,7 +907,11 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
 
         // nothing to be added to gc set.
 
-        log_manager.LogInsert(ItemPointer(tile_group_id, tuple_slot));
+        if (logging_type == LOGGING_TYPE_REORDERED_PHYSICAL) {
+                  ((logging::ReorderedPhysicalLogManager*)(&log_manager))->LogInsert(ItemPointer(tile_group_id, tuple_slot));
+                } else if (logging_type == LOGGING_TYPE_REORDERED_PHYLOG) {
+                  ((logging::ReorderedPhyLogLogManager*)(&log_manager))->LogInsert(ItemPointer(tile_group_id, tuple_slot));
+                }
 
       } else if (tuple_entry.second == RWType::INS_DEL) {
         PL_ASSERT(tile_group_header->GetTransactionId(tuple_slot) ==
@@ -907,8 +937,11 @@ ResultType TimestampOrderingTransactionManager::CommitTransaction(
 
   ResultType result = current_txn->GetResult();
 
-  log_manager.LogEnd();
-
+  if (logging_type == LOGGING_TYPE_REORDERED_PHYSICAL) {
+      ((logging::ReorderedPhysicalLogManager*)(&log_manager))->EndPersistTxn();
+    } else if (logging_type == LOGGING_TYPE_REORDERED_PHYLOG) {
+      ((logging::ReorderedPhyLogLogManager*)(&log_manager))->EndPersistTxn();
+    }
   EndTransaction(current_txn);
 
   // Increment # txns committed metric

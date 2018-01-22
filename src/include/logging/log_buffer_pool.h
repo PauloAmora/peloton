@@ -2,9 +2,9 @@
 //
 //                         Peloton
 //
-// log_buffer_pool.h
+// log_manager.cpp
 //
-// Identification: src/logging/log_buffer_pool.h
+// Identification: src/backend/logging/loggers/backend_buffer_pool.h
 //
 // Copyright (c) 2015-16, Carnegie Mellon University Database Group
 //
@@ -14,8 +14,8 @@
 
 #include <vector>
 
-#include "common/internal_types.h"
 #include "common/macros.h"
+#include "common/internal_types.h"
 #include "common/platform.h"
 
 #include "logging/log_buffer.h"
@@ -29,32 +29,26 @@ namespace logging {
     LogBufferPool &operator=(const LogBufferPool &&) = delete;
 
   public:
-    LogBufferPool(const size_t thread_id) : 
+    LogBufferPool(size_t worker_id) : 
       head_(0), 
       tail_(buffer_queue_size_),
-      thread_id_(thread_id),
+      worker_id_(worker_id),
       local_buffer_queue_(buffer_queue_size_) {}
 
-    std::unique_ptr<LogBuffer> GetBuffer(const size_t current_eid);
+    std::unique_ptr<LogBuffer> GetBuffer(size_t current_eid);
 
     void PutBuffer(std::unique_ptr<LogBuffer> buf);
 
-    inline size_t GetThreadId() const { return thread_id_; }
+    inline size_t GetWorkerId() { return worker_id_; }
 
-    inline size_t GetEmptySlotCount() const {
-      return tail_.load() - head_.load();
-    }
 
-    inline size_t GetMaxSlotCount() const {
-      return buffer_queue_size_;
-    }
 
   private:
     static const size_t buffer_queue_size_ = 16;
     std::atomic<size_t> head_;
     std::atomic<size_t> tail_;
     
-    size_t thread_id_;
+    size_t worker_id_;
 
     std::vector<std::unique_ptr<LogBuffer>> local_buffer_queue_;
 };

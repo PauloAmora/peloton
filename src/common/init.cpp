@@ -23,6 +23,7 @@
 #include "gc/gc_manager_factory.h"
 #include "settings/settings_manager.h"
 #include "threadpool/mono_queue_pool.h"
+#include "logging/durability_factory.h"
 
 namespace peloton {
 
@@ -79,6 +80,13 @@ void PelotonInit::Initialize() {
   pg_catalog->CreateDatabase(DEFAULT_DB_NAME, txn);
 
   txn_manager.CommitTransaction(txn);
+
+  logging::DurabilityFactory::Configure(LoggingType::LOGGING_TYPE_REORDERED_PHYLOG, CheckpointType::CHECKPOINT_TYPE_INVALID);
+
+  auto& log_manager = logging::DurabilityFactory::GetLoggerInstance();
+  log_manager.SetDirectories({"/tmp/log"});
+  log_manager.StartLoggers();
+  log_manager.RegisterWorker();
 }
 
 void PelotonInit::Shutdown() {

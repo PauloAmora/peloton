@@ -150,7 +150,8 @@ bool SeqScanExecutor::DExecute() {
     bool acquire_owner = GetPlanNode<planner::AbstractScan>().IsForUpdate();
     auto current_txn = executor_context_->GetTransaction();
     auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
-    if(target_table_->GetFilterMap().find(0)->second->Contain(t) == cuckoofilter::Status::NotFound)
+    auto map = target_table_->GetFilterMap().find(0)->second;
+    if(map->Contain(t) == cuckoofilter::Status::NotFound)
     {
         LOG_DEBUG("Skipped tile group");
         return false;

@@ -369,8 +369,10 @@ bool DataTable::InsertTuple(const AbstractTuple *tuple,
   if (index_count == 0) {
       oid_t column_count = schema->GetColumnCount();
       for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
-          if(schema->GetColumn(column_itr).IsInlined() && !is_catalog)
-              filter_map_.find(column_itr)->second->Add(tuple->GetValue(column_itr).GetAs<uint64_t>());
+          if(schema->GetColumn(column_itr).IsInlined() && !is_catalog){
+              auto val = tuple->GetValue(column_itr);
+              filter_map_.find(column_itr)->second->Add(val.GetAs<int32_t>());
+          }
       }
     IncreaseTupleCount(1);
     return true;
@@ -392,8 +394,9 @@ bool DataTable::InsertTuple(const AbstractTuple *tuple,
 
   oid_t column_count = schema->GetColumnCount();
   for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
-      if(schema->GetColumn(column_itr).IsInlined() && !is_catalog)
-          filter_map_.find(column_itr)->second->Add(tuple->GetValue(column_itr).GetAs<uint64_t>());
+      if(schema->GetColumn(column_itr).IsInlined() && !is_catalog){
+          filter_map_.find(column_itr)->second->Add(tuple->GetValue(column_itr).GetAs<int32_t>());
+      }
   }
 
   // Increase the table's number of tuples by 1

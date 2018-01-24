@@ -151,7 +151,8 @@ bool SeqScanExecutor::DExecute() {
     auto current_txn = executor_context_->GetTransaction();
     auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
     auto map = target_table_->GetFilterMap().find(0)->second;
-    if(map->Contain(t) == cuckoofilter::Status::NotFound)
+    auto status = map->Contain(t);
+    if(status == cuckoofilter::Status::NotFound)
     {
         LOG_DEBUG("Skipped tile group");
         return false;

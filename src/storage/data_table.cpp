@@ -60,7 +60,6 @@ DataTable::DataTable(catalog::Schema *schema, const std::string &table_name,
                      const size_t &tuples_per_tilegroup, const bool own_schema,
                      const bool adapt_table, const bool is_catalog, UNUSED_ATTRIBUTE const peloton::LayoutType layout_type)
     : AbstractTable(table_oid, schema, own_schema),
-      filter_ (cuckoofilter::CuckooFilter<uint64_t, 12>(50000)),
       database_oid(database_oid),
       table_name(table_name),
       tuples_per_tilegroup_(tuples_per_tilegroup),
@@ -263,8 +262,6 @@ ItemPointer DataTable::GetEmptyTupleSlot(const storage::Tuple *tuple) {
     // now we have already obtained a new tuple slot.
     if (tuple_slot != INVALID_OID) {
       tile_group_id = tile_group->GetTileGroupId();
-      auto t = tuple->GetValue(0).GetAs<uint>();
-      filter_.Add(t);
       break;
     }
   }

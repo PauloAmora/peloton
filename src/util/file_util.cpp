@@ -1,6 +1,7 @@
 
 #include "util/file_util.h"
 #include <dirent.h>
+#include <fstream>
 
 namespace peloton {
 
@@ -75,6 +76,15 @@ void FileUtil::FFlushFsync(FileHandle &file_handle) {
   if (ret != 0) {
     LOG_ERROR("Error occured in fsync(%d)", ret);
   }
+}
+
+bool FileUtil::CreateFile(const char *complete_path) {
+    std::ofstream os;
+
+    os.open(complete_path, std::ios::binary);
+    os.close();
+
+    return true;
 }
 
 bool FileUtil::OpenFile(const char *name, const char *mode, FileHandle &file_handle) {

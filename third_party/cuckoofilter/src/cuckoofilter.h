@@ -9,8 +9,6 @@
 #include "packedtable.h"
 #include "printutil.h"
 #include "singletable.h"
-//#include "common/internal_types.h"
-#include "type/value.h"
 
 namespace cuckoofilter {
 // status returned by a cuckoo filter operation

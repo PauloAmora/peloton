@@ -152,6 +152,8 @@ class DataTable : public AbstractTable {
   // Get a tile group with given layout
   TileGroup *GetTileGroupWithLayout(const column_map_type &partitioning);
 
+  void CompactTgList();
+
   //===--------------------------------------------------------------------===//
   // TRIGGER
   //===--------------------------------------------------------------------===//

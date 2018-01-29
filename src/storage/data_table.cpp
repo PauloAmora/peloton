@@ -693,6 +693,20 @@ void DataTable::ResetDirty() { dirty_ = false; }
 // TILE GROUP
 //===--------------------------------------------------------------------===//
 
+void DataTable::CompactTgList(){
+      std::vector<oid_t> new_tg_list;
+      for (size_t i = 0; i < tile_groups_.GetSize(); i++){
+          if(tile_groups_.Find(i) != 0){
+              new_tg_list.push_back(tile_groups_.Find(i));
+          }
+      }
+      tile_groups_.Clear(0);
+      for(uint i = 0; i < new_tg_list.size(); i++){
+          tile_groups_.Append(new_tg_list[i]);
+      }
+
+}
+
 TileGroup *DataTable::GetTileGroupWithLayout(
     const column_map_type &partitioning) {
   oid_t tile_group_id = catalog::Manager::GetInstance().GetNextTileGroupId();

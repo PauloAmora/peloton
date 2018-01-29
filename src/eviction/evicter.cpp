@@ -16,7 +16,7 @@
 
 namespace peloton  {
 namespace eviction {
-storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
+//storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
     //decidir qual e decidir quando cria-lo??
     const std::string DIR_GLOBAL = { "/home/paulo/log/" };
 
@@ -40,33 +40,34 @@ storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
             }
 
         }
+        table->CompactTgList();
 
-    auto temp_table = GetColdData(33554540, 38);
+    //auto temp_table = GetColdData(33554540, 38);
 
 //    std::cout << "TUPLE_COUNT_IN_TEMP: " << temp_table.GetTupleCount() << std::endl;
 
-    oid_t found_tile_group_count = temp_table.GetTileGroupCount();
+//    oid_t found_tile_group_count = temp_table.GetTileGroupCount();
 
-    for (oid_t tile_group_itr = 0; tile_group_itr < found_tile_group_count;
-         tile_group_itr++) {
-      auto tile_group = temp_table.GetTileGroup(tile_group_itr);
-      auto tile_count = tile_group->GetTileCount();
+//    for (oid_t tile_group_itr = 0; tile_group_itr < found_tile_group_count;
+//         tile_group_itr++) {
+//      auto tile_group = temp_table.GetTileGroup(tile_group_itr);
+//      auto tile_count = tile_group->GetTileCount();
 
-      for (oid_t tile_itr = 0; tile_itr < tile_count; tile_itr++) {
-        storage::Tile *tile = tile_group->GetTile(tile_itr);
-        if (tile == nullptr) continue;
-        storage::Tuple tuple(tile->GetSchema());
-        storage::TupleIterator tuple_itr(tile);
-        while (tuple_itr.Next(tuple)) {
-          auto tupleVal = tuple.GetValue(0);
-//          EXPECT_FALSE(tupleVal.IsNull());
-          //tuple.GetInfo()
-            std::cout << tupleVal << std::endl;
-        }
+//      for (oid_t tile_itr = 0; tile_itr < tile_count; tile_itr++) {
+//        storage::Tile *tile = tile_group->GetTile(tile_itr);
+//        if (tile == nullptr) continue;
+//        storage::Tuple tuple(tile->GetSchema());
+//        storage::TupleIterator tuple_itr(tile);
+//        while (tuple_itr.Next(tuple)) {
+//          auto tupleVal = tuple.GetValue(0);
+////          EXPECT_FALSE(tupleVal.IsNull());
+//          //tuple.GetInfo()
+//            std::cout << tupleVal << std::endl;
+//        }
 
-      }
+//      }
 
-    }
+    //}
 
     }
 
@@ -126,53 +127,53 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
 
 }
 
-storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
-    auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
-        16777316, table_id);
-    auto schema = table->GetSchema();
-    auto temp_schema = catalog::Schema::CopySchema(schema, index_list);
-    //ver qual oid                                              //, table->GetLayoutType()
-    storage::TempTable temp_table(INVALID_OID, temp_schema, true);
+//storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
+//    auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
+//        16777316, table_id);
+//    auto schema = table->GetSchema();
+//    auto temp_schema = catalog::Schema::CopySchema(schema, index_list);
+//    //ver qual oid                                              //, table->GetLayoutType()
+//    storage::TempTable temp_table(INVALID_OID, temp_schema, true);
 
-    for (auto tg_id : tiles_group_id) {
-        auto column_map = DeserializeMap(table_id, tg_id);
-        auto pair = column_map[col_index];
-        auto tile_id = pair.first;
-        auto offset  = pair.second;
-    }
-
-
+//    for (auto tg_id : tiles_group_id) {
+//        auto column_map = DeserializeMap(table_id, tg_id);
+//        auto pair = column_map[col_index];
+//        auto tile_id = pair.first;
+//        auto offset  = pair.second;
+//    }
 
 
-    size_t buf_size = temp_schema->GetColumnCount() * 4 * 5; //ver o descarte
-    std::unique_ptr<char[]> buffer(new char[buf_size]);
 
-    FileHandle f;
-    FileUtil::OpenFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
-                        std::to_string(tg_id) + "_" +
-                        std::to_string(tile_id)).c_str(), "rb", f);
 
-    FileUtil::ReadNBytesFromFile(f,  buffer.get(), buf_size);
+//    size_t buf_size = temp_schema->GetColumnCount() * 4 * 5; //ver o descarte
+//    std::unique_ptr<char[]> buffer(new char[buf_size]);
 
-    CopySerializeInput record_decode((const void *)buffer.get(), buf_size);
+//    FileHandle f;
+//    FileUtil::OpenFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
+//                        std::to_string(tg_id) + "_" +
+//                        std::to_string(tile_id)).c_str(), "rb", f);
 
-    for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
-        std::unique_ptr<storage::Tuple> tuple(new storage::Tuple(temp_schema, true));
+//    FileUtil::ReadNBytesFromFile(f,  buffer.get(), buf_size);
 
-        for (oid_t oid = 0; oid < temp_schema->GetColumnCount(); oid++) {
-            type::Value val = type::Value::DeserializeFrom(
-                        record_decode, temp_schema->GetColumn(oid).GetType());
-//            std::cout << val << std::endl;
-            tuple->SetValue(oid, val);
-        }
+//    CopySerializeInput record_decode((const void *)buffer.get(), buf_size);
 
-        temp_table.InsertTuple(tuple.get());
-    }
+//    for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
+//        std::unique_ptr<storage::Tuple> tuple(new storage::Tuple(temp_schema, true));
 
-    FileUtil::CloseFile(f);
+//        for (oid_t oid = 0; oid < temp_schema->GetColumnCount(); oid++) {
+//            type::Value val = type::Value::DeserializeFrom(
+//                        record_decode, temp_schema->GetColumn(oid).GetType());
+////            std::cout << val << std::endl;
+//            tuple->SetValue(oid, val);
+//        }
 
-    return temp_table;
-}
+//        temp_table.InsertTuple(tuple.get());
+//    }
+
+//    FileUtil::CloseFile(f);
+
+//    return temp_table;
+//}
 
     void Evicter::EvictTileGroup(std::shared_ptr<storage::TileGroup> *tg) {
         CopySerializeOutput output;

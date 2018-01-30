@@ -1,5 +1,6 @@
 #include "eviction/evicter.h"
 #include "type/serializeio.h"
+#include "type/value_factory.h"
 #include "type/ephemeral_pool.h"
 #include "storage/tile_group.h"
 #include "storage/tile_group_header.h"
@@ -9,6 +10,8 @@
 #include "storage/tile.h"
 #include <string>
 
+#include <utility>
+
 #include "util/output_buffer.h"
 #include "gc/gc_manager_factory.h"
 
@@ -16,7 +19,7 @@
 
 namespace peloton  {
 namespace eviction {
-storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
+storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list);
     //decidir qual e decidir quando cria-lo??
     const std::string DIR_GLOBAL = { "/home/paulo/log/" };
 
@@ -28,12 +31,13 @@ storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
 
             if (tg->GetHeader()->IsEvictable()) {
                 if (!FileUtil::CheckDirectoryExistence(
-                            (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str()))
+                            (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str())){
                     if (!FileUtil::CreateDirectory(
-                                (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str(), 0700))
+                                (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str(), 0700)){
                         LOG_DEBUG("ERROR - CREATE DIRECTORY");
                         //throw exception;
-
+                    }
+}
                 EvictTileGroup(&tg);
                 table->DeleteTileGroup(offset);
                 tg.reset();
@@ -41,7 +45,17 @@ storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
 
         }
 
-    auto temp_table = GetColdData(33554540, 38);
+        std::vector<oid_t> tiles_group_id;
+        tiles_group_id.push_back(43);
+
+        std::vector<oid_t> col_index_list;
+        col_index_list.push_back(1);
+//        col_index_list.push_back(1);
+//        col_index_list.push_back(2);
+        col_index_list.push_back(2);
+        col_index_list.push_back(5);
+
+    auto temp_table = GetColdData(33554540, tiles_group_id, col_index_list);
 
 //    std::cout << "TUPLE_COUNT_IN_TEMP: " << temp_table.GetTupleCount() << std::endl;
 
@@ -58,10 +72,10 @@ storage::TempTable GetColdData(oid_t table_id, oid_t tg_id);
         storage::Tuple tuple(tile->GetSchema());
         storage::TupleIterator tuple_itr(tile);
         while (tuple_itr.Next(tuple)) {
-          auto tupleVal = tuple.GetValue(0);
-//          EXPECT_FALSE(tupleVal.IsNull());
-          //tuple.GetInfo()
-            std::cout << tupleVal << std::endl;
+            for (auto i = 0U; i < col_index_list.size(); i++) {
+                auto tupleVal = tuple.GetValue(i);
+                std::cout << tupleVal << std::endl;
+            }
         }
 
       }
@@ -125,51 +139,109 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
     return map_recovered;
 
 }
-
+//col_index_list have to be in ascending order
 storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
     auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
         16777316, table_id);
     auto schema = table->GetSchema();
-    auto temp_schema = catalog::Schema::CopySchema(schema, index_list);
+    auto temp_schema = catalog::Schema::CopySchema(schema, col_index_list);
     //ver qual oid                                              //, table->GetLayoutType()
     storage::TempTable temp_table(INVALID_OID, temp_schema, true);
 
-    for (auto tg_id : tiles_group_id) {
-        auto column_map = DeserializeMap(table_id, tg_id);
-        auto pair = column_map[col_index];
-        auto tile_id = pair.first;
-        auto offset  = pair.second;
-    }
+    char num_col_buf[4]; //sizeof(int32_t)
 
-
-
-
-    size_t buf_size = temp_schema->GetColumnCount() * 4 * 5; //ver o descarte
+    size_t buf_size = 4096;
     std::unique_ptr<char[]> buffer(new char[buf_size]);
 
-    FileHandle f;
-    FileUtil::OpenFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
-                        std::to_string(tg_id) + "_" +
-                        std::to_string(tile_id)).c_str(), "rb", f);
+    for (auto tg_id : tiles_group_id) {
+        auto column_map = DeserializeMap(table_id, tg_id);
+        std::vector<std::unique_ptr<storage::Tuple>> recovered_tuples;
+        //      tile_id idx_col_in_temp, offset
+        std::map<oid_t, std::vector<std::pair<oid_t, oid_t>>> tiles_to_recover;
 
-    FileUtil::ReadNBytesFromFile(f,  buffer.get(), buf_size);
+        //  Pegar quais tiles ler
+        for (oid_t i = 0; i < col_index_list.size(); i++) {
+            auto col_idx = col_index_list[i];
 
-    CopySerializeInput record_decode((const void *)buffer.get(), buf_size);
+            auto pair_it = column_map.find(col_idx);
 
-    for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
-        std::unique_ptr<storage::Tuple> tuple(new storage::Tuple(temp_schema, true));
+            // eh necessario essa verificacao?? acho q nao
+            if (pair_it == column_map.end())
+                continue;
 
-        for (oid_t oid = 0; oid < temp_schema->GetColumnCount(); oid++) {
-            type::Value val = type::Value::DeserializeFrom(
-                        record_decode, temp_schema->GetColumn(oid).GetType());
-//            std::cout << val << std::endl;
-            tuple->SetValue(oid, val);
+            auto tile_id = pair_it->second.first;
+            auto offset  = pair_it->second.second;
+
+            if (tiles_to_recover.find(tile_id) == tiles_to_recover.end()) {
+                std::vector<std::pair<oid_t, oid_t>> entries;
+
+                tiles_to_recover[tile_id] = entries;
+            }
+
+            tiles_to_recover[tile_id].push_back(std::make_pair(i, offset));
+
         }
 
-        temp_table.InsertTuple(tuple.get());
-    }
+        //Ler tiles e construir tuplas
 
-    FileUtil::CloseFile(f);
+        for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
+            std::unique_ptr<storage::Tuple> tuple(new storage::Tuple(temp_schema, true));
+
+            recovered_tuples.push_back(std::move(tuple));
+        }
+
+        for (auto tile_it : tiles_to_recover) {
+            auto tile_id = tile_it.first;
+            auto cols_offsets = tile_it.second;
+            FileHandle f;
+
+            FileUtil::OpenFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
+                                std::to_string(tg_id) + "_" +
+                                std::to_string(tile_id)).c_str(), "rb", f);
+
+            FileUtil::ReadNBytesFromFile(f, num_col_buf, 4);
+            CopySerializeInput num_col_decode((const void *) &num_col_buf, 4);
+
+            oid_t num_col = num_col_decode.ReadInt();
+
+            for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
+                FileUtil::ReadNBytesFromFile(f, buffer.get(), num_col * 4);
+                CopySerializeInput tuple_decode((const void *) buffer.get(), num_col * 4);
+
+                oid_t offset_current = 0;
+
+                for (oid_t i = 0; i < cols_offsets.size(); i++) {
+                    auto col_oid = cols_offsets[i].first;
+                    auto offset = cols_offsets[i].second;
+
+                    //pulando
+                    while (offset_current < offset) {
+                        tuple_decode.ReadInt();
+                        offset_current++;
+                    }
+
+                    if (offset_current == offset) {
+                        type::Value val = type::Value::DeserializeFrom(
+                                    tuple_decode, temp_schema->GetColumn(col_oid).GetType());
+                        offset_current++;
+                        LOG_DEBUG("VALUE RETRIEVED: %d", val.GetAs<int>());
+                        recovered_tuples[tuple_count]->SetValue(col_oid, val);
+                    } else {
+                        std::cout << "ERRORRRRRR!!!!!!! offset_current > offset";
+                    }
+
+                }
+
+            }
+
+            FileUtil::CloseFile(f);
+
+        }
+
+        for (auto &tuple_ptr : recovered_tuples)
+            temp_table.InsertTuple(tuple_ptr.get());
+
+    }
 
     return temp_table;
 }
@@ -183,9 +255,17 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
         for (uint offset = 0; offset < (*tg)->GetTileCount(); offset++) {
             auto tile = (*tg)->GetTile(offset);
-            for (uint i = 0; i < (*tg)->GetActiveTupleCount(); i++){
-                type::Value val = tile->GetValue(i,0);
-                val.SerializeTo(output);
+            auto tile_col_count = tile->GetColumnCount();
+
+            output.WriteInt(tile_col_count);
+            //type::ValueFactory::GetIntegerValue(tile_col_count).SerializeTo(output);
+            for (oid_t tuple_offset = 0; tuple_offset < (*tg)->GetActiveTupleCount();
+                 tuple_offset++) {
+                 for (oid_t col_id = 0; col_id < tile_col_count; col_id++) {
+                    type::Value val = tile->GetValue(tuple_offset, col_id);
+                    val.SerializeTo(output);
+
+                }
             }
 
 //            tile->SerializeTo(output, (*tg)->GetActiveTupleCount());

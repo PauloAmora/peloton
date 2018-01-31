@@ -44,6 +44,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
             }
 
         }
+        table->CompactTgList();
 
         std::vector<oid_t> tiles_group_id;
         tiles_group_id.push_back(43);
@@ -59,28 +60,28 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
 //    std::cout << "TUPLE_COUNT_IN_TEMP: " << temp_table.GetTupleCount() << std::endl;
 
-    oid_t found_tile_group_count = temp_table.GetTileGroupCount();
+//    oid_t found_tile_group_count = temp_table.GetTileGroupCount();
 
-    for (oid_t tile_group_itr = 0; tile_group_itr < found_tile_group_count;
-         tile_group_itr++) {
-      auto tile_group = temp_table.GetTileGroup(tile_group_itr);
-      auto tile_count = tile_group->GetTileCount();
+//    for (oid_t tile_group_itr = 0; tile_group_itr < found_tile_group_count;
+//         tile_group_itr++) {
+//      auto tile_group = temp_table.GetTileGroup(tile_group_itr);
+//      auto tile_count = tile_group->GetTileCount();
 
-      for (oid_t tile_itr = 0; tile_itr < tile_count; tile_itr++) {
-        storage::Tile *tile = tile_group->GetTile(tile_itr);
-        if (tile == nullptr) continue;
-        storage::Tuple tuple(tile->GetSchema());
-        storage::TupleIterator tuple_itr(tile);
-        while (tuple_itr.Next(tuple)) {
+//      for (oid_t tile_itr = 0; tile_itr < tile_count; tile_itr++) {
+//        storage::Tile *tile = tile_group->GetTile(tile_itr);
+//        if (tile == nullptr) continue;
+//        storage::Tuple tuple(tile->GetSchema());
+//        storage::TupleIterator tuple_itr(tile);
+//        while (tuple_itr.Next(tuple)) {
             for (auto i = 0U; i < col_index_list.size(); i++) {
                 auto tupleVal = tuple.GetValue(i);
                 std::cout << tupleVal << std::endl;
             }
         }
 
-      }
+//      }
 
-    }
+    //}
 
     }
 
@@ -140,19 +141,20 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
 
 }
 //col_index_list have to be in ascending order
-storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
-    auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
-        16777316, table_id);
-    auto schema = table->GetSchema();
+//storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
+//    auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
+//        16777316, table_id);
+//    auto schema = table->GetSchema();
     auto temp_schema = catalog::Schema::CopySchema(schema, col_index_list);
-    //ver qual oid                                              //, table->GetLayoutType()
-    storage::TempTable temp_table(INVALID_OID, temp_schema, true);
+//    //ver qual oid                                              //, table->GetLayoutType()
+//    storage::TempTable temp_table(INVALID_OID, temp_schema, true);
 
     char num_col_buf[4]; //sizeof(int32_t)
 
     size_t buf_size = 4096;
     std::unique_ptr<char[]> buffer(new char[buf_size]);
 
+//    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
         std::vector<std::unique_ptr<storage::Tuple>> recovered_tuples;
@@ -243,8 +245,6 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
     }
 
-    return temp_table;
-}
 
     void Evicter::EvictTileGroup(std::shared_ptr<storage::TileGroup> *tg) {
         CopySerializeOutput output;

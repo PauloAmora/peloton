@@ -32,7 +32,7 @@ ZoneMapManager *ZoneMapManager::GetInstance() {
 }
 
 ZoneMapManager::ZoneMapManager() {
-  zone_map_table_exists = false;
+  zone_map_table_exists = true;
   pool_.reset(new type::EphemeralPool());
 }
 
@@ -123,7 +123,6 @@ void ZoneMapManager::CreateOrUpdateZoneMapInCatalog(
     oid_t database_id, oid_t table_id, oid_t tile_group_idx, oid_t column_id,
     std::string min, std::string max, std::string type,
     concurrency::TransactionContext *txn) {
-  auto stats_catalog = catalog::ZoneMapCatalog::GetInstance(nullptr);
   auto &txn_manager = concurrency::TransactionManagerFactory::GetInstance();
   // Delete and update in a single commit.
   bool single_statement_txn = false;
@@ -131,6 +130,7 @@ void ZoneMapManager::CreateOrUpdateZoneMapInCatalog(
     single_statement_txn = true;
     txn = txn_manager.BeginTransaction();
   }
+  auto stats_catalog = catalog::ZoneMapCatalog::GetInstance(txn);
   stats_catalog->DeleteColumnStatistics(database_id, table_id, tile_group_idx,
                                         column_id, txn);
 

@@ -29,6 +29,7 @@
 #include "storage/tile.h"
 #include "concurrency/transaction_manager_factory.h"
 #include "common/logger.h"
+#include "storage/zone_map_manager.h"
 
 namespace peloton {
 namespace executor {
@@ -161,9 +162,25 @@ bool SeqScanExecutor::DExecute() {
 
     // Retrieve next tile group.
     while (current_tile_group_offset_ < table_tile_group_count_) {
-      auto tile_group =
-          target_table_->GetTileGroup(current_tile_group_offset_++);
+        auto zm_manager = storage::ZoneMapManager::GetInstance();
+        const std::vector<storage::PredicateInfo> *parsed_predicates;
+        parsed_predicates = predicate_->GetParsedPredicates();
+        size_t num_preds = parsed_predicates->size();
+        storage::PredicateInfo* predicate_array = new storage::PredicateInfo[num_preds];
+        for (size_t i = 0; i < num_preds; i++) {
+          predicate_array[i].col_id = (*parsed_predicates)[i].col_id;
+          predicate_array[i].comparison_operator =
+              (*parsed_predicates)[i].comparison_operator;
+          predicate_array[i].predicate_value =
+              (*parsed_predicates)[i].predicate_value;
+        }
+        current_tile_group_offset_++;
+        if (zm_manager->ShouldScanTileGroup(predicate_array, num_preds, target_table_, current_tile_group_offset_-1)) {
+
+        auto tile_group =
+          target_table_->GetTileGroup(current_tile_group_offset_-1);
       if(tile_group == nullptr){ continue; }
+
       auto tile_group_header = tile_group->GetHeader();
 
       oid_t active_tuple_count = tile_group->GetNextTupleSlot();
@@ -227,6 +244,7 @@ bool SeqScanExecutor::DExecute() {
       return true;
 
     }
+  }
   }
 
   return false;

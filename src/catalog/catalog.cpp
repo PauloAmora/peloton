@@ -33,6 +33,7 @@
 #include "storage/storage_manager.h"
 #include "storage/table_factory.h"
 #include "type/ephemeral_pool.h"
+#include "catalog/zone_map_catalog.h"
 
 namespace peloton {
 namespace catalog {
@@ -151,6 +152,7 @@ void Catalog::Bootstrap() {
   TriggerCatalog::GetInstance(txn);
   LanguageCatalog::GetInstance(txn);
   ProcCatalog::GetInstance(txn);
+  ZoneMapCatalog::GetInstance(txn);
 
   txn_manager.CommitTransaction(txn);
 

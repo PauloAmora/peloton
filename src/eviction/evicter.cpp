@@ -8,6 +8,9 @@
 #include "storage/temp_table.h"
 #include "util/file_util.h"
 #include "storage/tile.h"
+#include "storage/zone_map_manager.h"
+#include "concurrency/transaction_manager_factory.h"
+#include "concurrency/transaction_manager.h"
 #include <string>
 
 #include <utility>
@@ -24,64 +27,62 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
     const std::string DIR_GLOBAL = { "/home/paulo/log/" };
 
     void Evicter::EvictDataFromTable(storage::DataTable* table) {
-        //auto gc = gc::GCManagerFactory::GetInstance();
+        auto zone_map_manager = storage::ZoneMapManager::GetInstance();
+        for (uint offset = 0; offset < table->GetTileGroupCount() - 50; offset++) {
+//            auto tg = table->GetTileGroup(offset);
 
-        for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
-            auto tg = table->GetTileGroup(offset);
-
-            if (tg->GetHeader()->IsEvictable()) {
-                if (!FileUtil::CheckDirectoryExistence(
-                            (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str())){
-                    if (!FileUtil::CreateDirectory(
-                                (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str(), 0700)){
-                        LOG_DEBUG("ERROR - CREATE DIRECTORY");
-                        //throw exception;
-                    }
-}
-                EvictTileGroup(&tg);
-                table->DeleteTileGroup(offset);
-                tg.reset();
-            }
+//            if (tg->GetHeader()->IsEvictable()) {
+//                if (!FileUtil::CheckDirectoryExistence(
+//                            (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str())){
+//                    if (!FileUtil::CreateDirectory(
+//                                (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str(), 0700)){
+//                        LOG_DEBUG("ERROR - CREATE DIRECTORY");
+//                        //throw exception;
+//                    }
+//}
+//                EvictTileGroup(&tg);
+                zone_map_manager->CreateOrUpdateZoneMapForTileGroup(table, offset, nullptr);
+//                table->DeleteTileGroup(offset);
+//                tg.reset();
+//            }
 
         }
-        table->CompactTgList();
+//        table->CompactTgList();
 
-        std::vector<oid_t> tiles_group_id;
-        tiles_group_id.push_back(43);
+////        std::vector<oid_t> tiles_group_id;
+////        tiles_group_id.push_back(43);
 
-        std::vector<oid_t> col_index_list;
-        col_index_list.push_back(1);
-//        col_index_list.push_back(1);
-//        col_index_list.push_back(2);
-        col_index_list.push_back(2);
-        col_index_list.push_back(5);
+////        std::vector<oid_t> col_index_list;
+////        col_index_list.push_back(1);
+////        col_index_list.push_back(2);
+////        col_index_list.push_back(5);
 
-    auto temp_table = GetColdData(33554540, tiles_group_id, col_index_list);
+////    auto temp_table = GetColdData(33554540, tiles_group_id, col_index_list);
 
-//    std::cout << "TUPLE_COUNT_IN_TEMP: " << temp_table.GetTupleCount() << std::endl;
+////    std::cout << "TUPLE_COUNT_IN_TEMP: " << temp_table.GetTupleCount() << std::endl;
 
-//    oid_t found_tile_group_count = temp_table.GetTileGroupCount();
+////    oid_t found_tile_group_count = temp_table.GetTileGroupCount();
 
-//    for (oid_t tile_group_itr = 0; tile_group_itr < found_tile_group_count;
-//         tile_group_itr++) {
-//      auto tile_group = temp_table.GetTileGroup(tile_group_itr);
-//      auto tile_count = tile_group->GetTileCount();
+////    for (oid_t tile_group_itr = 0; tile_group_itr < found_tile_group_count;
+////         tile_group_itr++) {
+////      auto tile_group = temp_table.GetTileGroup(tile_group_itr);
+////      auto tile_count = tile_group->GetTileCount();
 
-//      for (oid_t tile_itr = 0; tile_itr < tile_count; tile_itr++) {
-//        storage::Tile *tile = tile_group->GetTile(tile_itr);
-//        if (tile == nullptr) continue;
-//        storage::Tuple tuple(tile->GetSchema());
-//        storage::TupleIterator tuple_itr(tile);
-//        while (tuple_itr.Next(tuple)) {
-            for (auto i = 0U; i < col_index_list.size(); i++) {
-                auto tupleVal = tuple.GetValue(i);
-                std::cout << tupleVal << std::endl;
-            }
-        }
+////      for (oid_t tile_itr = 0; tile_itr < tile_count; tile_itr++) {
+////        storage::Tile *tile = tile_group->GetTile(tile_itr);
+////        if (tile == nullptr) continue;
+////        storage::Tuple tuple(tile->GetSchema());
+////        storage::TupleIterator tuple_itr(tile);
+////        while (tuple_itr.Next(tuple)) {
+////            for (auto i = 0U; i < col_index_list.size(); i++) {
+////                auto tupleVal = tuple.GetValue(i);
+////                std::cout << tupleVal << std::endl;
+////            }
+////        }
 
-//      }
+////      }
 
-    //}
+////    }
 
     }
 
@@ -141,13 +142,13 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
 
 }
 //col_index_list have to be in ascending order
-//storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
-//    auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
-//        16777316, table_id);
-//    auto schema = table->GetSchema();
+storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
+    auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
+        16777316, table_id);
+    auto schema = table->GetSchema();
     auto temp_schema = catalog::Schema::CopySchema(schema, col_index_list);
 //    //ver qual oid                                              //, table->GetLayoutType()
-//    storage::TempTable temp_table(INVALID_OID, temp_schema, true);
+    storage::TempTable temp_table(INVALID_OID, temp_schema, true);
 
     char num_col_buf[4]; //sizeof(int32_t)
 
@@ -244,6 +245,9 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
             temp_table.InsertTuple(tuple_ptr.get());
 
     }
+    return temp_table;
+}
+
 
 
     void Evicter::EvictTileGroup(std::shared_ptr<storage::TileGroup> *tg) {

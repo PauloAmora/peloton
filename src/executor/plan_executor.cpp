@@ -50,7 +50,7 @@ static void CompileAndExecutePlan(
 
   // Compile the query
   codegen::Query *query = codegen::QueryCache::Instance().Find(plan);
-  if (query == nullptr) {
+  if (query == nullptr || query->GetPlan().GetPlanNodeType() == PlanNodeType::SEQSCAN) {
     codegen::QueryCompiler compiler;
     auto compiled_query = compiler.Compile(
         *plan, executor_context->GetParams().GetQueryParametersMap(), consumer);

@@ -65,6 +65,7 @@ class SeqScanExecutor : public AbstractScanExecutor {
   //===--------------------------------------------------------------------===//
 
   bool index_done_ = false;
+  bool query_answered_ = false;
 
   /** @brief Pointer to table to scan from. */
   storage::DataTable *target_table_ = nullptr;

@@ -77,7 +77,6 @@ bool SeqScanExecutor::DInit() {
  * @return true on success, false otherwise.
  */
 bool SeqScanExecutor::DExecute() {
-
   // Scanning over a logical tile.
   if (children_.size() == 1 &&
       // There will be a child node on the create index scenario,
@@ -146,110 +145,104 @@ bool SeqScanExecutor::DExecute() {
     }
     
     concurrency::TransactionManager &transaction_manager =
-        concurrency::TransactionManagerFactory::GetInstance();
+           concurrency::TransactionManagerFactory::GetInstance();
 
-    bool acquire_owner = GetPlanNode<planner::AbstractScan>().IsForUpdate();
-    auto current_txn = executor_context_->GetTransaction();
-    /*auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
-    auto map = target_table_->GetFilterMap().find(0)->second;
-    auto status = map->Contain(t);
-    if(status == cuckoofilter::Status::NotFound)
-    {
-        LOG_DEBUG("Skipped tile group");
-        return false;
+       bool acquire_owner = GetPlanNode<planner::AbstractScan>().IsForUpdate();
+       auto current_txn = executor_context_->GetTransaction();
 
-    }*/
+       // Retrieve next tile group.
+       while (current_tile_group_offset_ < table_tile_group_count_) {
+         auto tile_group =
+             target_table_->GetTileGroup(current_tile_group_offset_++);
+         auto tile_group_header = tile_group->GetHeader();
 
-    // Retrieve next tile group.
-    while (current_tile_group_offset_ < table_tile_group_count_) {
+         oid_t active_tuple_count = tile_group->GetNextTupleSlot();
 
-        auto zm_manager = storage::ZoneMapManager::GetInstance();
-        const std::vector<storage::PredicateInfo> *parsed_predicates;
- size_t num_preds = 0;
- storage::PredicateInfo* predicate_array = nullptr;
-        if(predicate_!=nullptr){
-        parsed_predicates = predicate_->GetParsedPredicates();
-        num_preds = parsed_predicates->size();
-        predicate_array = new storage::PredicateInfo[num_preds];
-        for (size_t i = 0; i < num_preds; i++) {
-          predicate_array[i].col_id = (*parsed_predicates)[i].col_id;
-          predicate_array[i].comparison_operator =
-              (*parsed_predicates)[i].comparison_operator;
-          predicate_array[i].predicate_value =
-              (*parsed_predicates)[i].predicate_value;
-        }
-        }
-        current_tile_group_offset_++;
-        if (zm_manager->ShouldScanTileGroup(predicate_array, num_preds, target_table_, current_tile_group_offset_-1)) {
+         // Construct position list by looping through tile group
+         // and applying the predicate.
+         std::vector<oid_t> position_list;
+         for (oid_t tuple_id = 0; tuple_id < active_tuple_count; tuple_id++) {
+           ItemPointer location(tile_group->GetTileGroupId(), tuple_id);
 
-        auto tile_group =
-          target_table_->GetTileGroup(current_tile_group_offset_-1);
-      if(tile_group == nullptr){ continue; }
+           auto visibility = transaction_manager.IsVisible(
+               current_txn, tile_group_header, tuple_id);
 
-      auto tile_group_header = tile_group->GetHeader();
+           // check transaction visibility
+           if (visibility == VisibilityType::OK) {
+             // if the tuple is visible, then perform predicate evaluation.
+             if (predicate_ == nullptr) {
+               position_list.push_back(tuple_id);
+               auto res = transaction_manager.PerformRead(current_txn, location,
+                                                          acquire_owner);
+               if (!res) {
+                 transaction_manager.SetTransactionResult(current_txn,
+                                                          ResultType::FAILURE);
+                 return res;
+               }
+             } else {
+               ContainerTuple<storage::TileGroup> tuple(tile_group.get(),
+                                                        tuple_id);
+               LOG_TRACE("Evaluate predicate for a tuple");
+               auto eval =
+                   predicate_->Evaluate(&tuple, nullptr, executor_context_);
+               LOG_TRACE("Evaluation result: %s", eval.GetInfo().c_str());
+               if (eval.IsTrue()) {
+                 position_list.push_back(tuple_id);
+                 auto res = transaction_manager.PerformRead(current_txn, location,
+                                                            acquire_owner);
+                 if (!res) {
+                   transaction_manager.SetTransactionResult(current_txn,
+                                                            ResultType::FAILURE);
+                   return res;
+                 } else {
+                   LOG_TRACE("Sequential Scan Predicate Satisfied");
+                 }
+               }
+             }
+           }
+         }
 
-      oid_t active_tuple_count = tile_group->GetNextTupleSlot();
+         // Don't return empty tiles
+         if (position_list.size() == 0) {
+           continue;
+         }
 
-      // Construct position list by looping through tile group
-      // and applying the predicate.
-      std::vector<oid_t> position_list;
-      for (oid_t tuple_id = 0; tuple_id < active_tuple_count; tuple_id++) {
-        ItemPointer location(tile_group->GetTileGroupId(), tuple_id);
-
-        auto visibility = transaction_manager.IsVisible(
-            current_txn, tile_group_header, tuple_id);
-
-        // check transaction visibility
-        if (visibility == VisibilityType::OK) {
-          // if the tuple is visible, then perform predicate evaluation.
-          if (predicate_ == nullptr) {
-            position_list.push_back(tuple_id);
-            auto res = transaction_manager.PerformRead(current_txn, location,
-                                                       acquire_owner);
-            if (!res) {
-              transaction_manager.SetTransactionResult(current_txn,
-                                                       ResultType::FAILURE);
-              return res;
-            }
-          } else {
-            ContainerTuple<storage::TileGroup> tuple(tile_group.get(),
-                                                     tuple_id);
-            LOG_TRACE("Evaluate predicate for a tuple");
-            auto eval =
-                predicate_->Evaluate(&tuple, nullptr, executor_context_);
-            LOG_TRACE("Evaluation result: %s", eval.GetInfo().c_str());
-            if (eval.IsTrue()) {
-              position_list.push_back(tuple_id);
-              auto res = transaction_manager.PerformRead(current_txn, location,
-                                                         acquire_owner);
-              if (!res) {
-                transaction_manager.SetTransactionResult(current_txn,
-                                                         ResultType::FAILURE);
-                return res;
-              } else {
-                LOG_TRACE("Sequential Scan Predicate Satisfied");
-              }
-            }
+         // Construct logical tile.
+         std::unique_ptr<LogicalTile> logical_tile(LogicalTileFactory::GetTile());
+         logical_tile->AddColumns(tile_group, column_ids_);
+         logical_tile->AddPositionList(std::move(position_list));
+         query_answered_ = true;
+         LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
+         SetOutput(logical_tile.release());
+         return true;
+       }
+     }
+  if(!query_answered_ && predicate_ != nullptr){
+      auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
+      auto map = target_table_->GetFilterMap().find(0)->second;
+      auto status = map->Contain(t);
+      if(status == cuckoofilter::Status::NotFound)
+      {
+         LOG_DEBUG("Skipped tile group");
+         return false;
+      } else {
+          auto zm_manager = storage::ZoneMapManager::GetInstance();
+          //zm_manager->CandidateTileGroups()
+          const std::vector<storage::PredicateInfo> *parsed_predicates;
+          size_t num_preds = 0;
+          storage::PredicateInfo* predicate_array = nullptr;
+          parsed_predicates = predicate_->GetParsedPredicates();
+          num_preds = parsed_predicates->size();
+          predicate_array = new storage::PredicateInfo[num_preds];
+          for (size_t i = 0; i < num_preds; i++) {
+            predicate_array[i].col_id = (*parsed_predicates)[i].col_id;
+            predicate_array[i].comparison_operator =
+                (*parsed_predicates)[i].comparison_operator;
+            predicate_array[i].predicate_value =
+                (*parsed_predicates)[i].predicate_value;
           }
-        }
+          zm_manager->ShouldScanTileGroup(predicate_array, num_preds, target_table_,(int64_t)0);
       }
-
-      // Don't return empty tiles
-      if (position_list.size() == 0) {
-        continue;
-      }
-
-      // Construct logical tile.
-      std::unique_ptr<LogicalTile> logical_tile(LogicalTileFactory::GetTile());
-      logical_tile->AddColumns(tile_group, column_ids_);
-      logical_tile->AddPositionList(std::move(position_list));
-
-      LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
-      SetOutput(logical_tile.release());
-      return true;
-
-    }
-  }
   }
 
   return false;

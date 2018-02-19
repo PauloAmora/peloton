@@ -78,15 +78,15 @@ void ZoneMapManager::CreateZoneMapsForTable(storage::DataTable *table,
  * @param   table_ptr, tile_group_index and transaction_ptr
  */
 void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
-    storage::DataTable *table, oid_t tile_group_idx,
+    storage::DataTable *table, oid_t tile_group_id,
     concurrency::TransactionContext *txn) {
-  LOG_DEBUG("Creating Zone Maps for TileGroupId : %u", tile_group_idx);
+  LOG_DEBUG("Creating Zone Maps for TileGroupId : %u", tile_group_id);
   
   oid_t database_id = table->GetDatabaseOid();
   oid_t table_id = table->GetOid();
   auto schema = table->GetSchema();
   size_t num_columns = schema->GetColumnCount();
-  auto tile_group = table->GetTileGroup(tile_group_idx);
+  auto tile_group = table->GetTileGroupById(tile_group_id);
 
   for (oid_t col_itr = 0; col_itr < num_columns; col_itr++) {
     // Set temp min and temp max as the first value.
@@ -108,7 +108,7 @@ void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
     std::string converted_max = max.ToString();
     std::string converted_type = TypeIdToString(val_type);
 
-    CreateOrUpdateZoneMapInCatalog(database_id, table_id, tile_group_idx,
+    CreateOrUpdateZoneMapInCatalog(database_id, table_id, tile_group_id,
                                    col_itr, converted_min, converted_max,
                                    converted_type, txn);
   }
@@ -120,7 +120,7 @@ void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
  * @param   database_id, table_id, tile_group_index, column_id, min, max and type
  */
 void ZoneMapManager::CreateOrUpdateZoneMapInCatalog(
-    oid_t database_id, oid_t table_id, oid_t tile_group_idx, oid_t column_id,
+    oid_t database_id, oid_t table_id, oid_t tile_group_id, oid_t column_id,
     std::string min, std::string max, std::string type,
     concurrency::TransactionContext *txn) {
   auto &txn_manager = concurrency::TransactionManagerFactory::GetInstance();
@@ -131,10 +131,10 @@ void ZoneMapManager::CreateOrUpdateZoneMapInCatalog(
     txn = txn_manager.BeginTransaction();
   }
   auto stats_catalog = catalog::ZoneMapCatalog::GetInstance(txn);
-  stats_catalog->DeleteColumnStatistics(database_id, table_id, tile_group_idx,
+  stats_catalog->DeleteColumnStatistics(database_id, table_id, tile_group_id,
                                         column_id, txn);
 
-  stats_catalog->InsertColumnStatistics(database_id, table_id, tile_group_idx,
+  stats_catalog->InsertColumnStatistics(database_id, table_id, tile_group_id,
                                         column_id, min, max, type, pool_.get(),
                                         txn);
 
@@ -150,12 +150,12 @@ void ZoneMapManager::CreateOrUpdateZoneMapInCatalog(
  */
 std::unique_ptr<ZoneMapManager::ColumnStatistics>
 ZoneMapManager::GetZoneMapFromCatalog(oid_t database_id, oid_t table_id,
-                                      oid_t tile_group_idx, oid_t column_id) {
+                                      oid_t tile_group_id, oid_t column_id) {
   auto stats_catalog = catalog::ZoneMapCatalog::GetInstance(nullptr);
   auto &txn_manager = concurrency::TransactionManagerFactory::GetInstance();
   auto txn = txn_manager.BeginTransaction();
   auto result_vector = stats_catalog->GetColumnStatistics(
-      database_id, table_id, tile_group_idx, column_id, txn);
+      database_id, table_id, tile_group_id, column_id, txn);
   txn_manager.CommitTransaction(txn);
 
   if (result_vector == nullptr) {
@@ -198,7 +198,7 @@ ZoneMapManager::GetResultVectorAsZoneMap(
  */
 bool ZoneMapManager::ShouldScanTileGroup(
     storage::PredicateInfo *parsed_predicates, int32_t num_predicates,
-    storage::DataTable *table, int64_t tile_group_idx) {
+    storage::DataTable *table, int64_t tile_group_id) {
     if(num_predicates==0 || parsed_predicates == nullptr){
         return true;
     }
@@ -212,7 +212,7 @@ bool ZoneMapManager::ShouldScanTileGroup(
     oid_t table_id = table->GetOid();
 
     std::unique_ptr<ZoneMapManager::ColumnStatistics> stats =
-        GetZoneMapFromCatalog(database_id, table_id, tile_group_idx, col_id);
+        GetZoneMapFromCatalog(database_id, table_id, tile_group_id, col_id);
 
     if (stats == nullptr) {
       return true;
@@ -248,6 +248,13 @@ bool ZoneMapManager::ShouldScanTileGroup(
   }
   return true;
 }
+
+/*std::vector<oid_t> CandidateTileGroups(storage::PredicateInfo *parsed_predicates,
+                                       int32_t num_predicates,
+                                       storage::DataTable *table){
+
+
+}*/
 
 /**
  * @brief   Checks whether a zone map table in catalog was created.

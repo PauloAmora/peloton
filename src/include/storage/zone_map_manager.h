@@ -67,6 +67,10 @@ class ZoneMapManager {
                                       storage::DataTable *table,
                                       int64_t tile_group_id);
 
+ /* std::vector<oid_t> CandidateTileGroups(storage::PredicateInfo *parsed_predicates,
+                                         int32_t num_predicates,
+                                         storage::DataTable *table); */
+
   bool ZoneMapTableExists();
 
  private:

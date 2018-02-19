@@ -28,26 +28,43 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
     void Evicter::EvictDataFromTable(storage::DataTable* table) {
         auto zone_map_manager = storage::ZoneMapManager::GetInstance();
-        for (uint offset = 0; offset < table->GetTileGroupCount() - 50; offset++) {
-//            auto tg = table->GetTileGroup(offset);
-
-//            if (tg->GetHeader()->IsEvictable()) {
-//                if (!FileUtil::CheckDirectoryExistence(
-//                            (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str())){
-//                    if (!FileUtil::CreateDirectory(
-//                                (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str(), 0700)){
-//                        LOG_DEBUG("ERROR - CREATE DIRECTORY");
-//                        //throw exception;
-//                    }
-//}
-//                EvictTileGroup(&tg);
-                zone_map_manager->CreateOrUpdateZoneMapForTileGroup(table, offset, nullptr);
-//                table->DeleteTileGroup(offset);
-//                tg.reset();
-//            }
+        auto schema = table->GetSchema();
+        if(table->GetFilterMap().find(0) == table->GetFilterMap().end()){
+            for (uint col_itr = 0; col_itr < schema->GetColumnCount(); col_itr++){
+                if(schema->GetColumn(col_itr).GetType() != type::TypeId::VARCHAR)
+                {
+                    cuckoofilter::CuckooFilter<int32_t, 12>* f = new cuckoofilter::CuckooFilter<int32_t, 12>(500000);
+                    table->GetFilterMap().insert(std::make_pair(col_itr, f));
+                }
+            }
+        }
+        for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
+            auto tg = table->GetTileGroup(offset);
+            if (tg->GetHeader()->IsEvictable()) {
+                if (!FileUtil::CheckDirectoryExistence(
+                            (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str())){
+                    if (!FileUtil::CreateDirectory(
+                                (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str(), 0700)){
+                        LOG_DEBUG("ERROR - CREATE DIRECTORY");
+                        //throw exception;
+                    }
+                }
+                oid_t column_count = schema->GetColumnCount();
+                for(uint i = 0; i < tg->GetActiveTupleCount(); i++){
+                for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
+                    if(schema->GetColumn(column_itr).IsInlined()){
+                        table->GetFilterMap().find(column_itr)->second->Add(tg->GetValue(i,column_itr).GetAs<int32_t>());
+                    }
+                }
+                }
+                EvictTileGroup(&tg);
+                zone_map_manager->CreateOrUpdateZoneMapForTileGroup(table, tg->GetTileGroupId(), nullptr);
+                table->DeleteTileGroup(offset);
+                tg.reset();
+            }
 
         }
-//        table->CompactTgList();
+        table->CompactTgList();
 
 ////        std::vector<oid_t> tiles_group_id;
 ////        tiles_group_id.push_back(43);

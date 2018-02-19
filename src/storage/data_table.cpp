@@ -71,11 +71,6 @@ DataTable::DataTable(catalog::Schema *schema, const std::string &table_name,
   auto col_count = schema->GetColumnCount();
   for (oid_t col_itr = 0; col_itr < col_count; col_itr++) {
     default_partition_[col_itr] = std::make_pair(0, col_itr);
-    if(!is_catalog && schema->GetColumn(col_itr).GetType() != type::TypeId::VARCHAR)
-    {
-        cuckoofilter::CuckooFilter<uint64_t, 12>* f = new cuckoofilter::CuckooFilter<uint64_t, 12>(500000);
-        filter_map_.insert(std::make_pair(col_itr, f));
-    }
   }
 
   if (is_catalog == true) {
@@ -367,13 +362,7 @@ bool DataTable::InsertTuple(const AbstractTuple *tuple,
 
   auto index_count = GetIndexCount();
   if (index_count == 0) {
-      oid_t column_count = schema->GetColumnCount();
-      for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
-          if(schema->GetColumn(column_itr).IsInlined() && !is_catalog){
-              auto val = tuple->GetValue(column_itr);
-              filter_map_.find(column_itr)->second->Add(val.GetAs<int32_t>());
-          }
-      }
+
     IncreaseTupleCount(1);
     return true;
   }
@@ -391,13 +380,6 @@ bool DataTable::InsertTuple(const AbstractTuple *tuple,
 
   PL_ASSERT((*index_entry_ptr)->block == location.block &&
             (*index_entry_ptr)->offset == location.offset);
-
-  oid_t column_count = schema->GetColumnCount();
-  for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
-      if(schema->GetColumn(column_itr).IsInlined() && !is_catalog){
-          filter_map_.find(column_itr)->second->Add(tuple->GetValue(column_itr).GetAs<int32_t>());
-      }
-  }
 
   // Increase the table's number of tuples by 1
   IncreaseTupleCount(1);

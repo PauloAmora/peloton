@@ -93,7 +93,7 @@ bool ZoneMapCatalog::DeleteColumnStatistics(oid_t database_id, oid_t table_id,
 }
 
 std::unique_ptr<std::vector<type::Value>> ZoneMapCatalog::GetColumnStatistics(
-    oid_t database_id, oid_t table_id, oid_t tile_group_id, oid_t column_id,
+    oid_t database_id, oid_t table_id, UNUSED_ATTRIBUTE oid_t tile_group_id, oid_t column_id,
     concurrency::TransactionContext *txn) {
   std::vector<oid_t> column_ids(
       {static_cast<int>(ColumnId::MINIMUM), 
@@ -105,7 +105,7 @@ std::unique_ptr<std::vector<type::Value>> ZoneMapCatalog::GetColumnStatistics(
   std::vector<type::Value> values({
     type::ValueFactory::GetIntegerValue(database_id),
     type::ValueFactory::GetIntegerValue(table_id),
-    type::ValueFactory::GetIntegerValue(tile_group_id),
+//    type::ValueFactory::GetIntegerValue(tile_group_id),
     type::ValueFactory::GetIntegerValue(column_id)
   });
 

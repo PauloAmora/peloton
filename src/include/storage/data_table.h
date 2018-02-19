@@ -168,7 +168,7 @@ class DataTable : public AbstractTable {
 
   void UpdateTriggerListFromCatalog(concurrency::TransactionContext *txn);
 
-  inline std::map<oid_t, cuckoofilter::CuckooFilter<uint64_t,12>*> GetFilterMap() const {
+  inline std::map<oid_t, cuckoofilter::CuckooFilter<int32_t,12>*> GetFilterMap() {
     return filter_map_;
   }
 
@@ -423,7 +423,7 @@ class DataTable : public AbstractTable {
   std::mutex layout_samples_mutex_;
 
   // filters for columns
-  std::map<oid_t, cuckoofilter::CuckooFilter<uint64_t, 12>*> filter_map_;
+  std::map<oid_t, cuckoofilter::CuckooFilter<int32_t, 12>*> filter_map_;
 
   bool is_catalog;
 

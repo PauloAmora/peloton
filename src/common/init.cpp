@@ -51,7 +51,7 @@ void PelotonInit::Initialize() {
   // start GC.
   gc::GCManagerFactory::GetInstance().StartGC();
 
-  ltm::ResourceTracker::GetInstance().StartRT();
+ // ltm::ResourceTracker::GetInstance().StartRT();
 
   // start index tuner
   if (settings::SettingsManager::GetBool(settings::SettingId::index_tuner)) {

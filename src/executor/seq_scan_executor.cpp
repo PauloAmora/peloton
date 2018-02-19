@@ -150,7 +150,7 @@ bool SeqScanExecutor::DExecute() {
 
     bool acquire_owner = GetPlanNode<planner::AbstractScan>().IsForUpdate();
     auto current_txn = executor_context_->GetTransaction();
-    auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
+    /*auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
     auto map = target_table_->GetFilterMap().find(0)->second;
     auto status = map->Contain(t);
     if(status == cuckoofilter::Status::NotFound)
@@ -158,21 +158,26 @@ bool SeqScanExecutor::DExecute() {
         LOG_DEBUG("Skipped tile group");
         return false;
 
-    }
+    }*/
 
     // Retrieve next tile group.
     while (current_tile_group_offset_ < table_tile_group_count_) {
+
         auto zm_manager = storage::ZoneMapManager::GetInstance();
         const std::vector<storage::PredicateInfo> *parsed_predicates;
+ size_t num_preds = 0;
+ storage::PredicateInfo* predicate_array = nullptr;
+        if(predicate_!=nullptr){
         parsed_predicates = predicate_->GetParsedPredicates();
-        size_t num_preds = parsed_predicates->size();
-        storage::PredicateInfo* predicate_array = new storage::PredicateInfo[num_preds];
+        num_preds = parsed_predicates->size();
+        predicate_array = new storage::PredicateInfo[num_preds];
         for (size_t i = 0; i < num_preds; i++) {
           predicate_array[i].col_id = (*parsed_predicates)[i].col_id;
           predicate_array[i].comparison_operator =
               (*parsed_predicates)[i].comparison_operator;
           predicate_array[i].predicate_value =
               (*parsed_predicates)[i].predicate_value;
+        }
         }
         current_tile_group_offset_++;
         if (zm_manager->ShouldScanTileGroup(predicate_array, num_preds, target_table_, current_tile_group_offset_-1)) {

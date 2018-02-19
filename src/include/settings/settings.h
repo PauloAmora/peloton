@@ -104,7 +104,7 @@ SETTING_bool(index_tuner,
 // Enable or disable layout tuner
 SETTING_bool(layout_tuner,
             "Enable layout tuner (default: false)",
-            false,
+            true,
             true, true)
 
 //===----------------------------------------------------------------------===//
@@ -113,7 +113,7 @@ SETTING_bool(layout_tuner,
 
 SETTING_bool(codegen,
             "Enable code-generation for query execution (default: true)",
-            true,
+            false,
             true, true)
 
 //===----------------------------------------------------------------------===//

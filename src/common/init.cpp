@@ -42,8 +42,8 @@ void PelotonInit::Initialize() {
   // start worker pool
   threadpool::MonoQueuePool::GetInstance().Startup();
 
-  storage::DataTable::SetActiveTileGroupCount(parallelism);
-  storage::DataTable::SetActiveIndirectionArrayCount(parallelism);
+  storage::DataTable::SetActiveTileGroupCount(1);
+  storage::DataTable::SetActiveIndirectionArrayCount(1);
 
   // start epoch.
   concurrency::EpochManagerFactory::GetInstance().StartEpoch();

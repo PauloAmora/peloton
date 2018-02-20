@@ -29,7 +29,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
     void Evicter::EvictDataFromTable(storage::DataTable* table) {
         auto zone_map_manager = storage::ZoneMapManager::GetInstance();
         auto schema = table->GetSchema();
-        if(table->GetFilterMap().find(0) == table->GetFilterMap().end()){
+        if(table->GetFilterMap().count(0) == 0){
             for (uint col_itr = 0; col_itr < schema->GetColumnCount(); col_itr++){
                 if(schema->GetColumn(col_itr).GetType() != type::TypeId::VARCHAR)
                 {
@@ -37,6 +37,11 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
                     table->GetFilterMap().insert(std::make_pair(col_itr, f));
                 }
             }
+        }
+        for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
+            auto tg = table->GetTileGroup(offset);
+            LOG_DEBUG("--- Tuples in tilegroup %u: %u", tg->GetTileGroupId(), tg->GetActiveTupleCount());
+
         }
         for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
             auto tg = table->GetTileGroup(offset);
@@ -53,7 +58,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
                 for(uint i = 0; i < tg->GetActiveTupleCount(); i++){
                 for (oid_t column_itr = 0; column_itr < column_count; column_itr++) {
                     if(schema->GetColumn(column_itr).IsInlined()){
-                        table->GetFilterMap().find(column_itr)->second->Add(tg->GetValue(i,column_itr).GetAs<int32_t>());
+                        table->GetFilterMap().at(column_itr)->Add(tg->GetValue(i,column_itr).GetAs<int32_t>());
                     }
                 }
                 }
@@ -159,7 +164,7 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
 
 }
 //col_index_list have to be in ascending order
-storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
+storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list) {
     auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
         16777316, table_id);
     auto schema = table->GetSchema();
@@ -169,7 +174,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
     char num_col_buf[4]; //sizeof(int32_t)
 
-    size_t buf_size = 4096;
+    size_t buf_size = 512000;
     std::unique_ptr<char[]> buffer(new char[buf_size]);
 
 //    }
@@ -204,7 +209,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
         //Ler tiles e construir tuplas
 
-        for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
+        for (uint tuple_count = 0; tuple_count < 500; tuple_count++) {
             std::unique_ptr<storage::Tuple> tuple(new storage::Tuple(temp_schema, true));
 
             recovered_tuples.push_back(std::move(tuple));
@@ -224,7 +229,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
             oid_t num_col = num_col_decode.ReadInt();
 
-            for (oid_t tuple_count = 0; tuple_count < 5; tuple_count++) {
+            for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
                 FileUtil::ReadNBytesFromFile(f, buffer.get(), num_col * 4);
                 CopySerializeInput tuple_decode((const void *) buffer.get(), num_col * 4);
 
@@ -244,7 +249,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
                         type::Value val = type::Value::DeserializeFrom(
                                     tuple_decode, temp_schema->GetColumn(col_oid).GetType());
                         offset_current++;
-                        LOG_DEBUG("VALUE RETRIEVED: %d", val.GetAs<int>());
+                     //   LOG_DEBUG("VALUE RETRIEVED: %d", val.GetAs<int>());
                         recovered_tuples[tuple_count]->SetValue(col_oid, val);
                     } else {
                         std::cout << "ERRORRRRRR!!!!!!! offset_current > offset";

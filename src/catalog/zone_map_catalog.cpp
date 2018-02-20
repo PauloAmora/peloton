@@ -105,7 +105,7 @@ std::unique_ptr<std::vector<type::Value>> ZoneMapCatalog::GetColumnStatistics(
   std::vector<type::Value> values({
     type::ValueFactory::GetIntegerValue(database_id),
     type::ValueFactory::GetIntegerValue(table_id),
-//    type::ValueFactory::GetIntegerValue(tile_group_id),
+    type::ValueFactory::GetIntegerValue(tile_group_id),
     type::ValueFactory::GetIntegerValue(column_id)
   });
 

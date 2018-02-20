@@ -168,7 +168,7 @@ class DataTable : public AbstractTable {
 
   void UpdateTriggerListFromCatalog(concurrency::TransactionContext *txn);
 
-  inline std::map<oid_t, cuckoofilter::CuckooFilter<int32_t,12>*> GetFilterMap() {
+  inline std::map<oid_t, cuckoofilter::CuckooFilter<int32_t,12>*> &GetFilterMap() {
     return filter_map_;
   }
 

@@ -104,7 +104,7 @@ SETTING_bool(index_tuner,
 // Enable or disable layout tuner
 SETTING_bool(layout_tuner,
             "Enable layout tuner (default: false)",
-            true,
+            false,
             true, true)
 
 //===----------------------------------------------------------------------===//

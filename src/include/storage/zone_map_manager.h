@@ -67,9 +67,9 @@ class ZoneMapManager {
                                       storage::DataTable *table,
                                       int64_t tile_group_id);
 
- /* std::vector<oid_t> CandidateTileGroups(storage::PredicateInfo *parsed_predicates,
+  std::vector<oid_t> CandidateTileGroups(storage::PredicateInfo *parsed_predicates,
                                          int32_t num_predicates,
-                                         storage::DataTable *table); */
+                                         storage::DataTable *table);
 
   bool ZoneMapTableExists();
 
@@ -115,6 +115,8 @@ class ZoneMapManager {
   std::unique_ptr<type::AbstractPool> pool_;
 
   bool zone_map_table_exists;
+
+  std::vector<oid_t> zone_mapped_tgs;
 };
 }
 }

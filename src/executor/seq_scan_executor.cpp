@@ -30,6 +30,8 @@
 #include "concurrency/transaction_manager_factory.h"
 #include "common/logger.h"
 #include "storage/zone_map_manager.h"
+#include "expression/expression_util.h"
+#include "eviction/evicter.h"
 
 namespace peloton {
 namespace executor {
@@ -218,9 +220,10 @@ bool SeqScanExecutor::DExecute() {
        }
      }
   if(!query_answered_ && predicate_ != nullptr){
-      auto t = static_cast<expression::ConstantValueExpression*>(predicate_->GetChild(1))->GetValue().GetAs<uint>();
+      auto t =  executor_context_->GetParamValues();
+     // LOG_DEBUG("%d", t);
       auto map = target_table_->GetFilterMap().find(0)->second;
-      auto status = map->Contain(t);
+      auto status = map->Contain(t[0].GetAs<int>());
       if(status == cuckoofilter::Status::NotFound)
       {
          LOG_DEBUG("Skipped tile group");
@@ -228,20 +231,103 @@ bool SeqScanExecutor::DExecute() {
       } else {
           auto zm_manager = storage::ZoneMapManager::GetInstance();
           //zm_manager->CandidateTileGroups()
-          const std::vector<storage::PredicateInfo> *parsed_predicates;
+          std::vector<storage::PredicateInfo> parsed_predicates;
           size_t num_preds = 0;
           storage::PredicateInfo* predicate_array = nullptr;
-          parsed_predicates = predicate_->GetParsedPredicates();
-          num_preds = parsed_predicates->size();
+
+
+          //auto expr_type = predicate_->GetExpressionType();
+
+            // The right child should be a constant.
+            auto right_child = predicate_->GetModifiableChild(1);
+
+            if (right_child->GetExpressionType() == ExpressionType::VALUE_CONSTANT) {
+              auto right_exp = (const expression::ConstantValueExpression
+                                    *)(predicate_->GetModifiableChild(1));
+              auto predicate_val = right_exp->GetValue();
+              // Get the column id for this predicate
+              auto left_exp =
+                  (const expression::TupleValueExpression *)(predicate_->GetModifiableChild(
+                      0));
+              int col_id = left_exp->GetColumnId();
+
+              auto comparison_operator = (int)predicate_->GetExpressionType();
+              storage::PredicateInfo p_info;
+
+              p_info.col_id = col_id;
+              p_info.comparison_operator = comparison_operator;
+              p_info.predicate_value = predicate_val;
+
+              parsed_predicates.push_back(p_info);
+
+
+
+
+          num_preds = parsed_predicates.size();
           predicate_array = new storage::PredicateInfo[num_preds];
           for (size_t i = 0; i < num_preds; i++) {
-            predicate_array[i].col_id = (*parsed_predicates)[i].col_id;
+            predicate_array[i].col_id = parsed_predicates[i].col_id;
             predicate_array[i].comparison_operator =
-                (*parsed_predicates)[i].comparison_operator;
+                parsed_predicates[i].comparison_operator;
             predicate_array[i].predicate_value =
-                (*parsed_predicates)[i].predicate_value;
+                parsed_predicates[i].predicate_value;
           }
-          zm_manager->ShouldScanTileGroup(predicate_array, num_preds, target_table_,(int64_t)0);
+          auto evicter = new eviction::Evicter();
+          column_ids_.insert(column_ids_.begin(),0);
+          auto cold_table = evicter->GetColdData(target_table_->GetOid(),zm_manager->CandidateTileGroups(predicate_array, num_preds, target_table_),column_ids_);
+          auto cold_tg =
+              cold_table.GetTileGroup(0);
+          std::vector<oid_t> cold_col_ids;
+          std::vector<oid_t> pred_col_ids;
+          pred_col_ids.push_back(0);
+          for(uint o = 1; o < column_ids_.size(); o++)
+              cold_col_ids.push_back(o);
+          pred_col_ids.insert(std::end(pred_col_ids), std::begin(cold_col_ids), std::end(cold_col_ids));
+
+          oid_t cold_active_tuple_count = cold_tg->GetNextTupleSlot();
+
+          // Construct position list by looping through tile group
+          // and applying the predicate.
+          std::vector<oid_t> cold_position_list;
+          for (oid_t tuple_id = 0; tuple_id < cold_active_tuple_count; tuple_id++) {
+            ItemPointer location(cold_tg->GetTileGroupId(), tuple_id);
+
+                ContainerTuple<storage::TileGroup> tuple(cold_tg.get(),
+                                                         tuple_id);
+                LOG_TRACE("Evaluate predicate for a tuple");
+                auto eval =
+                    predicate_->Evaluate(&tuple, nullptr, executor_context_);
+                LOG_DEBUG("Evaluation result: %s", eval.GetInfo().c_str());
+                if (eval.IsTrue()) {
+                  cold_position_list.push_back(tuple_id);
+                  //auto res = transaction_manager.PerformRead(current_txn, location,
+                 //                                            acquire_owner);
+                 // if (!res) {
+                  //  transaction_manager.SetTransactionResult(current_txn,
+                    //                                         ResultType::FAILURE);
+                   // return res;
+                  }
+                }
+
+
+
+
+          // Don't return empty tiles
+          if (cold_position_list.size() == 0) {
+            return false;
+          }
+
+
+          // Construct logical tile.
+          std::unique_ptr<LogicalTile> logical_tile(LogicalTileFactory::GetTile());
+          logical_tile->AddColumns(cold_tg, cold_col_ids);
+          logical_tile->AddPositionList(std::move(cold_position_list));
+          //query_answered_ = true;
+          LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
+          SetOutput(logical_tile.release());
+          return false;
+
+          }
       }
   }
 

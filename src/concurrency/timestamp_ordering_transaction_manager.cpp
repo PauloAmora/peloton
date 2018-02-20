@@ -461,6 +461,8 @@ bool TimestampOrderingTransactionManager::PerformRead(
   }  // end SERIALIZABLE || REPEATABLE_READS
 }
 
+//static int count_inserts = 0;
+
 void TimestampOrderingTransactionManager::PerformInsert(
     TransactionContext *const current_txn, const ItemPointer &location,
     ItemPointer *index_entry_ptr) {
@@ -472,7 +474,7 @@ void TimestampOrderingTransactionManager::PerformInsert(
   auto &manager = catalog::Manager::GetInstance();
   auto tile_group_header = manager.GetTileGroup(tile_group_id)->GetHeader();
   auto transaction_id = current_txn->GetTransactionId();
-
+  //LOG_DEBUG("INSERT #%d", count_inserts++);
   // check MVCC info
   // the tuple slot must be empty.
   PL_ASSERT(tile_group_header->GetTransactionId(tuple_id) == INVALID_TXN_ID);

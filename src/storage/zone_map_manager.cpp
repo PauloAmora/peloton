@@ -87,6 +87,7 @@ void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
   auto schema = table->GetSchema();
   size_t num_columns = schema->GetColumnCount();
   auto tile_group = table->GetTileGroupById(tile_group_id);
+  zone_mapped_tgs.push_back(tile_group_id);
 
   for (oid_t col_itr = 0; col_itr < num_columns; col_itr++) {
     // Set temp min and temp max as the first value.
@@ -249,12 +250,19 @@ bool ZoneMapManager::ShouldScanTileGroup(
   return true;
 }
 
-/*std::vector<oid_t> CandidateTileGroups(storage::PredicateInfo *parsed_predicates,
+std::vector<oid_t> ZoneMapManager::CandidateTileGroups(storage::PredicateInfo *parsed_predicates,
                                        int32_t num_predicates,
-                                       storage::DataTable *table){
+                                       storage::DataTable *table)
+{
+    std::vector<oid_t> ret;
+    for(uint i = 0; i < zone_mapped_tgs.size(); i++){
+        if(ShouldScanTileGroup(parsed_predicates, num_predicates, table, zone_mapped_tgs[i])){
+            ret.push_back(zone_mapped_tgs[i]);
+        }
+    }
+    return ret;
 
-
-}*/
+}
 
 /**
  * @brief   Checks whether a zone map table in catalog was created.

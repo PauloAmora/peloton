@@ -22,6 +22,15 @@
 
 namespace peloton  {
 namespace eviction {
+
+column_map_type types[] = {
+    { {0, {0,0}},  {1, {1,0}}, {2, {2,0}}, {3, {2,1}}, {4, {2,2}}, {5, {2,3}}, {6, {2,4}}, {7, {2,5}}, {8, {2,6}}, {9, {2,7}}, {10, {2,8}} },
+    { {0, {0,0}},  {1, {1,0}}, {2, {1,1}}, {3, {2,0}}, {4, {2,1}}, {5, {2,2}}, {6, {3,0}}, {7, {3,1}}, {8, {3,2}}, {9, {3,3}}, {10, {3,4}} },
+    { {0, {0,0}},  {1, {1,0}}, {2, {2,0}}, {3, {2,1}}, {4, {2,2}}, {5, {3,0}}, {6, {3,1}}, {7, {3,2}}, {8, {3,3}}, {9, {3,4}}, {10, {3,5}} },
+    { {0, {0,0}},  {1, {1,0}}, {2, {2,0}}, {3, {2,1}}, {4, {3,0}}, {5, {3,1}}, {6, {3,2}}, {7, {4,0}}, {8, {4,1}}, {9, {5,0}}, {10, {5,1}} },
+    { {0, {0,0}},  {1, {1,0}}, {2, {1,1}}, {3, {2,0}}, {4, {2,1}}, {5, {2,2}}, {6, {3,0}}, {7, {4,0}}, {8, {4,1}}, {9, {5,0}}, {10, {5,1}} }
+};
+
 storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list);
     //decidir qual e decidir quando cria-lo??
     const std::string DIR_GLOBAL = { "/home/paulo/log/" };
@@ -44,6 +53,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
         }
         for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
+            table->TransformTileGroup(offset, types[offset%5]);
             auto tg = table->GetTileGroup(offset);
             if (tg->GetHeader()->IsEvictable()) {
                 if (!FileUtil::CheckDirectoryExistence(
@@ -310,8 +320,10 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             //  Call fsync
                 FileUtil::FFlushFsync(f);
                 FileUtil::CloseFile(f);
-                delete bf;
+                bf->Reset();
+                output.Reset();
         }
+        delete bf;
     }
 
 }

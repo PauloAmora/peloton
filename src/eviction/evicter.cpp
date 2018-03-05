@@ -47,13 +47,13 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
                 }
             }
         }
-        for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
+        /*for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
             auto tg = table->GetTileGroup(offset);
-            LOG_DEBUG("--- Tuples in tilegroup %u: %u", tg->GetTileGroupId(), tg->GetActiveTupleCount());
+        //    LOG_DEBUG("--- Tuples in tilegroup %u: %u", tg->GetTileGroupId(), tg->GetActiveTupleCount());
 
-        }
+        }*/
         for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
-            table->TransformTileGroup(offset, types[offset%5]);
+           // table->TransformTileGroup(offset, types[offset%5]);
             auto tg = table->GetTileGroup(offset);
             if (tg->GetHeader()->IsEvictable()) {
                 if (!FileUtil::CheckDirectoryExistence(

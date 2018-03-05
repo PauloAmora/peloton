@@ -31,6 +31,12 @@ SETTING_int(max_connections,
            64,
            true, true)
 
+// Maximum number of connections
+SETTING_int(evict,
+           "evict percentage of table",
+           0,
+           true, true)
+
 // Socket family
 SETTING_string(socket_family,
               "Socket family (default: AF_INET)",

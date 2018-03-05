@@ -21,6 +21,7 @@
 #include "eviction/evicter.h"
 #include "storage/tile_group.h"
 #include "storage/tile_group_header.h"
+#include "settings/settings_manager.h"
 
 namespace peloton {
 namespace executor {
@@ -61,8 +62,11 @@ try{
       }
           auto evicter = new eviction::Evicter();
 
-        auto one_third = table_object->GetTileGroupCount()/2;
-        for (uint i = 0; i<one_third; i++){
+        double evicts = settings::SettingsManager::GetInt(settings::SettingId::evict);
+        LOG_DEBUG("EVICTS VALUE --- %f", evicts);
+        uint evicts_int = (uint)(table_object->GetTileGroupCount() * (evicts/10));
+        LOG_DEBUG("EVICTS VALUE --- %u", evicts_int);
+        for (uint i = 0; i<evicts_int; i++){
         table_object->GetTileGroup(i)->GetHeader()->SetEvictable(true);
           /*  for (uint j = 0; j<table_object->GetTileGroup(i)->GetActiveTupleCount(); j++){
                 //current_txn->RecordDelete(ItemPointer(table_object->GetTileGroup(i)->GetTileGroupId(), j));

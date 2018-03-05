@@ -215,6 +215,7 @@ bool SeqScanExecutor::DExecute() {
          logical_tile->AddPositionList(std::move(position_list));
          query_answered_ = true;
          LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
+                   LOG_DEBUG("Query answered from hot data");
          SetOutput(logical_tile.release());
          return true;
        }
@@ -241,10 +242,10 @@ bool SeqScanExecutor::DExecute() {
             // The right child should be a constant.
             auto right_child = predicate_->GetModifiableChild(1);
 
-            if (right_child->GetExpressionType() == ExpressionType::VALUE_CONSTANT) {
-              auto right_exp = (const expression::ConstantValueExpression
-                                    *)(predicate_->GetModifiableChild(1));
-              auto predicate_val = right_exp->GetValue();
+            if (right_child->GetExpressionType() == ExpressionType::VALUE_PARAMETER) {
+//              auto right_exp = (const expression::ParameterValueExpression
+//                                    *)(predicate_->GetModifiableChild(1));
+              auto predicate_val = t[0];
               // Get the column id for this predicate
               auto left_exp =
                   (const expression::TupleValueExpression *)(predicate_->GetModifiableChild(
@@ -297,7 +298,7 @@ bool SeqScanExecutor::DExecute() {
                 LOG_TRACE("Evaluate predicate for a tuple");
                 auto eval =
                     predicate_->Evaluate(&tuple, nullptr, executor_context_);
-                LOG_DEBUG("Evaluation result: %s", eval.GetInfo().c_str());
+                LOG_TRACE("Evaluation result: %s", eval.GetInfo().c_str());
                 if (eval.IsTrue()) {
                   cold_position_list.push_back(tuple_id);
                   //auto res = transaction_manager.PerformRead(current_txn, location,
@@ -323,14 +324,15 @@ bool SeqScanExecutor::DExecute() {
           logical_tile->AddColumns(cold_tg, cold_col_ids);
           logical_tile->AddPositionList(std::move(cold_position_list));
           //query_answered_ = true;
-          LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
+         // LOG_DEBUG("Information %s", logical_tile->GetInfo().c_str());
+         // LOG_DEBUG("Query answered from cold data");
           SetOutput(logical_tile.release());
           return false;
 
           }
       }
   }
-
+          //LOG_DEBUG("Query NOT answered ");
   return false;
 }
 

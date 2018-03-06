@@ -187,7 +187,7 @@ bool SeqScanExecutor::DExecute() {
                LOG_TRACE("Evaluate predicate for a tuple");
                auto eval =
                    predicate_->Evaluate(&tuple, nullptr, executor_context_);
-               LOG_TRACE("Evaluation result: %s", eval.GetInfo().c_str());
+               LOG_DEBUG("Evaluation result: %s", eval.GetInfo().c_str());
                if (eval.IsTrue()) {
                  position_list.push_back(tuple_id);
                  auto res = transaction_manager.PerformRead(current_txn, location,
@@ -247,15 +247,15 @@ bool SeqScanExecutor::DExecute() {
 //                                    *)(predicate_->GetModifiableChild(1));
               auto predicate_val = t[0];
               // Get the column id for this predicate
-              auto left_exp =
-                  (const expression::TupleValueExpression *)(predicate_->GetModifiableChild(
-                      0));
-              int col_id = left_exp->GetColumnId();
+//              auto left_exp =
+//                  (const expression::TupleValueExpression *)(predicate_->GetModifiableChild(
+//                      0));
+//              int col_id = left_exp->GetColumnId();
 
               auto comparison_operator = (int)predicate_->GetExpressionType();
               storage::PredicateInfo p_info;
 
-              p_info.col_id = col_id;
+              p_info.col_id = 0;
               p_info.comparison_operator = comparison_operator;
               p_info.predicate_value = predicate_val;
 
@@ -325,7 +325,7 @@ bool SeqScanExecutor::DExecute() {
           logical_tile->AddPositionList(std::move(cold_position_list));
           //query_answered_ = true;
          // LOG_DEBUG("Information %s", logical_tile->GetInfo().c_str());
-         // LOG_DEBUG("Query answered from cold data");
+          LOG_DEBUG("Query answered from cold data");
           SetOutput(logical_tile.release());
           return false;
 

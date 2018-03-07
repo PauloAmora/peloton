@@ -156,8 +156,10 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
     auto column_count = schema->GetColumnCount();
     size_t buf_size = column_count * 3 * 4;
     char* buffer;
-    posix_memalign((void**) &buffer, getpagesize(), 4096 );
-
+    int k = posix_memalign((void**) &buffer, getpagesize(), 4096 );
+    if(k < 0){
+        throw std::logic_error(strerror(errno));
+    }
     FileUtil::ReadNBytesFromFile(f,  buffer, 4096);
 
     CopySerializeInput input_decode((const void *) buffer, buf_size);
@@ -191,7 +193,10 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
     size_t buf_size = 512*1024;
     char* buffer;
-    posix_memalign((void**) &buffer, getpagesize(), buf_size);
+    int k = posix_memalign((void**) &buffer, getpagesize(), buf_size);
+    if(k < 0){
+        throw std::logic_error(strerror(errno));
+    }
 //    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
@@ -326,7 +331,10 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             bf->WriteData(output.Data(), output.Size());
 
             uint writesize = bf->GetSize() / getpagesize();
-            write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
+            int k = write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
+            if(k !=(writesize+1) * getpagesize()){
+                throw std::logic_error(strerror(errno));
+            }
 
             //  Call fsync
                 FileUtil::FFlushFsync(f);

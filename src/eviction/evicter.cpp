@@ -331,8 +331,8 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             bf->WriteData(output.Data(), output.Size());
 
             uint writesize = bf->GetSize() / getpagesize();
-            int k = write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
-            if(k !=(writesize+1) * getpagesize()){
+            ssize_t k = write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
+            if(k !=(ssize_t)(writesize+1) * getpagesize()){
                 throw std::logic_error(strerror(errno));
             }
 

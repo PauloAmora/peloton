@@ -14,12 +14,14 @@ class OutputBuffer {
 
 private:
   // constant
-  const static size_t buffer_capacity_ = 1024 * 1024 * 32; // 32 MB
+  constexpr static size_t buffer_capacity_ = 1024 * 512; // 32 MB
 
 public:
   OutputBuffer() :
-     size_(0){
-    data_ = new char[buffer_capacity_];
+     size_(0){  
+    if(posix_memalign((void**)&data_, getpagesize(), buffer_capacity_) != 0){
+       throw std::logic_error(strerror(errno));
+    }
     PL_MEMSET(data_, 0, buffer_capacity_);
   }
   ~OutputBuffer() {
@@ -36,15 +38,13 @@ public:
   inline bool Empty() { return size_ == 0; }
 
   bool WriteData(const char *data, size_t len){
-      if (unlikely_branch(size_ + len > buffer_capacity_)) {
-        return false;
-      } else {
+
         PL_ASSERT(data);
         PL_ASSERT(len);
         PL_MEMCPY(data_ + size_, data, len);
         size_ += len;
         return true;
-      }
+
   }
 
 private:

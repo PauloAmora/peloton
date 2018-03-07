@@ -67,12 +67,12 @@ void FileUtil::FFlushFsync(FileHandle &file_handle) {
   // First, flush
   PL_ASSERT(file_handle.fd != INVALID_FILE_DESCRIPTOR);
   if (file_handle.fd == INVALID_FILE_DESCRIPTOR) return;
-  int ret = fflush(file_handle.file);
-  if (ret != 0) {
-    LOG_ERROR("Error occured in fflush(%d)", ret);
-  }
+  //int ret = fflush(file_handle.file);
+  //if (ret != 0) {
+  //  LOG_ERROR("Error occured in fflush(%d)", ret);
+  //}
   // Finally, sync
-  ret = fsync(file_handle.fd);
+  int ret = fsync(file_handle.fd);
   if (ret != 0) {
     LOG_ERROR("Error occured in fsync(%d)", ret);
   }
@@ -87,31 +87,48 @@ bool FileUtil::CreateFile(const char *complete_path) {
     return true;
 }
 
-bool FileUtil::OpenFile(const char *name, const char *mode, FileHandle &file_handle) {
-  auto file = fopen(name, mode);
-  if (file == NULL) {
+bool FileUtil::OpenWriteFile(const char *name, const char *mode UNUSED_ATTRIBUTE, FileHandle &file_handle) {
+  auto file = open(name, O_DIRECT | O_WRONLY | O_SYNC | O_CREAT, 0777);
+  if (file < 0) {
     LOG_ERROR("Checkpoint File is NULL");
     return false;
   } else {
-    file_handle.file = file;
-  }
-
-  // also, get the descriptor
-  auto fd = fileno(file);
-  if (fd == INVALID_FILE_DESCRIPTOR) {
-    LOG_ERROR("checkpoint_file_fd_ is -1");
-    return false;
-  } else {
-    file_handle.fd = fd;
+    file_handle.fd = file;
   }
 
   file_handle.size = GetFileSize(file_handle);
   return true;
 }
 
-bool FileUtil::CloseFile(FileHandle &file_handle) {
-  PL_ASSERT(file_handle.file != nullptr && file_handle.fd != INVALID_FILE_DESCRIPTOR);
-  int ret = fclose(file_handle.file);
+bool FileUtil::OpenReadFile(const char *name, FileHandle &file_handle) {
+  auto file = open(name, O_DIRECT | O_SYNC | O_RDONLY);
+  if (file < 0) {
+    LOG_ERROR("Checkpoint File is NULL");
+    return false;
+  } else {
+    file_handle.fd = file;
+  }
+  file_handle.size = GetFileSize(file_handle);
+  return true;
+}
+
+bool FileUtil::CloseWriteFile(FileHandle &file_handle) {
+  //PL_ASSERT(file_handle.file != nullptr && file_handle.fd != INVALID_FILE_DESCRIPTOR);
+  int ret = close(file_handle.fd);
+
+  if (ret == 0) {
+    file_handle.file = nullptr;
+    file_handle.fd = INVALID_FILE_DESCRIPTOR;
+  } else {
+    LOG_ERROR("Error when closing log file");
+  }
+
+  return ret == 0;
+}
+
+bool FileUtil::CloseReadFile(FileHandle &file_handle) {
+ // PL_ASSERT(file_handle.file != nullptr && file_handle.fd != INVALID_FILE_DESCRIPTOR);
+  int ret = close(file_handle.fd);
 
   if (ret == 0) {
     file_handle.file = nullptr;
@@ -145,8 +162,10 @@ size_t FileUtil::GetFileSize(FileHandle &file_handle) {
 }
 
 bool FileUtil::ReadNBytesFromFile(FileHandle &file_handle, void *bytes_read, size_t n) {
-  PL_ASSERT(file_handle.fd != INVALID_FILE_DESCRIPTOR && file_handle.file != nullptr);
-  int res = fread(bytes_read, n, 1, file_handle.file);
-  return res == 1;
+//  PL_ASSERT(file_handle.fd != INVALID_FILE_DESCRIPTOR && file_handle.file != nullptr);
+
+    uint res = read(file_handle.fd, bytes_read, n);
+    //int res = fread(bytes_read, n, 1, file_handle.file);
+  return res == n;
 }
 }

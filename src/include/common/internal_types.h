@@ -28,6 +28,8 @@
 #include "type/type_id.h"
 #include "common/logger.h"
 #include "common/macros.h"
+#include <errno.h>
+#include <string.h>
 
 namespace peloton {
 

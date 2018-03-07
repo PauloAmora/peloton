@@ -123,7 +123,7 @@ void SerializeMap(std::shared_ptr<storage::TileGroup> *tg) {
     FileHandle f;
     OutputBuffer *bf = new OutputBuffer();
 
-    FileUtil::OpenFile((DIR_GLOBAL + std::to_string((*tg)->GetTableId()) + "/" +
+    FileUtil::OpenWriteFile((DIR_GLOBAL + std::to_string((*tg)->GetTableId()) + "/" +
                         std::to_string((*tg)->GetTileGroupId()) + "_h").c_str(), "wb", f);
 
     for (const auto &mapping : (*tg)->GetColumnMap()) {
@@ -133,30 +133,34 @@ void SerializeMap(std::shared_ptr<storage::TileGroup> *tg) {
     }
 
     bf->WriteData(output.Data(), output.Size());
+    uint writesize = bf->GetSize() / getpagesize();
 
-    fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
-
+    ssize_t res = write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
+    if (res != (ssize_t)((writesize+1) * getpagesize())){
+        throw std::logic_error(strerror(errno));
+    }
     //  Call fsync
     FileUtil::FFlushFsync(f);
-    FileUtil::CloseFile(f);
+    FileUtil::CloseWriteFile(f);
     delete bf;
 }
 
 column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
     FileHandle f;
-    FileUtil::OpenFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
-                        std::to_string(tg_id) + "_h").c_str(), "rb", f);
+    FileUtil::OpenReadFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
+                        std::to_string(tg_id) + "_h").c_str(), f);
 
     auto table = storage::StorageManager::GetInstance()->GetTableWithOid(
         16777316, table_id);
     auto schema = table->GetSchema();
     auto column_count = schema->GetColumnCount();
     size_t buf_size = column_count * 3 * 4;
-    std::unique_ptr<char[]> buffer(new char[buf_size]);
+    char* buffer;
+    posix_memalign((void**) &buffer, getpagesize(), 4096 );
 
-    FileUtil::ReadNBytesFromFile(f,  buffer.get(), buf_size);
+    FileUtil::ReadNBytesFromFile(f,  buffer, 4096);
 
-    CopySerializeInput input_decode((const void *) buffer.get(), buf_size);
+    CopySerializeInput input_decode((const void *) buffer, buf_size);
 
     column_map_type map_recovered;
 
@@ -168,7 +172,7 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
         map_recovered[col_id] = std::make_pair(til_id, offset);
     }
 
-    FileUtil::CloseFile(f);
+    FileUtil::CloseReadFile(f);
 
     return map_recovered;
 
@@ -182,11 +186,12 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 //    //ver qual oid                                              //, table->GetLayoutType()
     storage::TempTable temp_table(INVALID_OID, temp_schema, true);
 
-    char num_col_buf[4]; //sizeof(int32_t)
+   // char* num_col_buf;//sizeof(int32_t)
+   // posix_memalign((void**) &num_col_buf, getpagesize(), getpagesize());
 
-    size_t buf_size = 512000;
-    std::unique_ptr<char[]> buffer(new char[buf_size]);
-
+    size_t buf_size = 512*1024;
+    char* buffer;
+    posix_memalign((void**) &buffer, getpagesize(), buf_size);
 //    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
@@ -229,19 +234,22 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             auto tile_id = tile_it.first;
             auto cols_offsets = tile_it.second;
             FileHandle f;
-
-            FileUtil::OpenFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
+            FileUtil::OpenReadFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
                                 std::to_string(tg_id) + "_" +
-                                std::to_string(tile_id)).c_str(), "rb", f);
+                                std::to_string(tile_id)).c_str(), f);
+            int filecounter = 4096;
 
-            FileUtil::ReadNBytesFromFile(f, num_col_buf, 4);
-            CopySerializeInput num_col_decode((const void *) &num_col_buf, 4);
+            FileUtil::ReadNBytesFromFile(f, buffer, 4096);
+            CopySerializeInput num_col_decode((const void *) buffer, 4);
 
             oid_t num_col = num_col_decode.ReadInt();
-
+            filecounter -= 4;
             for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
-                FileUtil::ReadNBytesFromFile(f, buffer.get(), num_col * 4);
-                CopySerializeInput tuple_decode((const void *) buffer.get(), num_col * 4);
+                if(filecounter<=0){
+                    FileUtil::ReadNBytesFromFile(f, buffer, 4096);
+                    filecounter = 4096;
+                }
+                CopySerializeInput tuple_decode((const void *) buffer, num_col * 4);
 
                 oid_t offset_current = 0;
 
@@ -252,12 +260,14 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
                     //pulando
                     while (offset_current < offset) {
                         tuple_decode.ReadInt();
+                                    filecounter -= 4;
                         offset_current++;
                     }
 
                     if (offset_current == offset) {
                         type::Value val = type::Value::DeserializeFrom(
                                     tuple_decode, temp_schema->GetColumn(col_oid).GetType());
+                        filecounter -= 4;
                         offset_current++;
                      //   LOG_DEBUG("VALUE RETRIEVED: %d", val.GetAs<int>());
                         recovered_tuples[tuple_count]->SetValue(col_oid, val);
@@ -269,7 +279,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
             }
 
-            FileUtil::CloseFile(f);
+            FileUtil::CloseReadFile(f);
 
         }
 
@@ -311,15 +321,16 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 //                                       std::to_string((*tg)->GetTileGroupId())).c_str()))
 //                LOG_DEBUG("ERROR - CREATE FILE");
 
-            FileUtil::OpenFile((DIR_GLOBAL + std::to_string((*tg)->GetTableId()) + "/" +
+            FileUtil::OpenWriteFile((DIR_GLOBAL + std::to_string((*tg)->GetTableId()) + "/" +
                                 std::to_string((*tg)->GetTileGroupId()) + "_" + std::to_string(offset)).c_str(), "wb", f);
             bf->WriteData(output.Data(), output.Size());
 
-            fwrite((const void *) (bf->GetData()), bf->GetSize(), 1, f.file);
+            uint writesize = bf->GetSize() / getpagesize();
+            write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
 
             //  Call fsync
                 FileUtil::FFlushFsync(f);
-                FileUtil::CloseFile(f);
+                FileUtil::CloseWriteFile(f);
                 bf->Reset();
                 output.Reset();
         }

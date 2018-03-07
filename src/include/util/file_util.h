@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 #include "common/internal_types.h"
+#include <sys/types.h>
+#include <fcntl.h>
 
 namespace peloton {
 
@@ -90,9 +92,13 @@ class FileUtil {
 
  static bool CreateFile(const char *complete_path);
 
- static bool OpenFile(const char *name, const char *mode, FileHandle &file_handle);
+ static bool OpenWriteFile(const char *name, const char *mode, FileHandle &file_handle);
 
- static bool CloseFile(FileHandle &file_handle);
+ static bool CloseWriteFile(FileHandle &file_handle);
+
+ static bool OpenReadFile(const char *name, FileHandle &file_handle);
+
+ static bool CloseReadFile(FileHandle &file_handle);
 
  static bool IsFileTruncated(FileHandle &file_handle, size_t size_to_read);
 

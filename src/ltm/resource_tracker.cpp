@@ -1,4 +1,6 @@
 #include "ltm/resource_tracker.h"
+#include "executor/seq_scan_executor.h"
+#include "eviction/evicter.h"
 
 namespace peloton {
 namespace ltm {
@@ -16,13 +18,15 @@ void ResourceTracker::StopRT() {
 }
 
 void ResourceTracker::Running() {
-   sysinfo (&memInfo);
-   total_memory_ = memInfo.totalram;
-   total_memory_ *= memInfo.mem_unit;
+   //sysinfo (&memInfo);
+  // total_memory_ = memInfo.totalram;
+  // total_memory_ *= memInfo.mem_unit;
    while(is_running_) {
-    std::this_thread::sleep_for(std::chrono::microseconds(1000000));
-    used_memory_ = GetValue() * 1024;
-    std::cout << "Used memory: " << used_memory_ << std::endl;
+    std::this_thread::sleep_for(std::chrono::microseconds(300000000));
+    //used_memory_ = GetValue() * 1024;
+    std::cout << "Hot Accesses:" << executor::SeqScanExecutor::readHotAccess() << std::endl;
+    std::cout << "Cold Accesses:" << eviction::Evicter::readColdAccess() << std::endl;
+
 
 
   }

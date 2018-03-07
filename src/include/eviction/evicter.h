@@ -8,11 +8,16 @@ class DataTable;
 namespace eviction {
 class Evicter {
 public:
+    static int cold_access;
+    static int readColdAccess() { return cold_access; }
+    static void initColdAccess(){cold_access = 0;}
     void EvictDataFromTable (storage::DataTable* table);
     storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list);
 private:
     void EvictTileGroup (std::shared_ptr<storage::TileGroup> *tg);
 };
+
+//extern int Evicter::cold_access;
 
 }
 }

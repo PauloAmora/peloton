@@ -36,6 +36,8 @@
 namespace peloton {
 namespace executor {
 
+int SeqScanExecutor::hot_access;
+
 /**
  * @brief Constructor for seqscan executor.
  * @param node Seqscan node corresponding to this executor.
@@ -187,7 +189,7 @@ bool SeqScanExecutor::DExecute() {
                LOG_TRACE("Evaluate predicate for a tuple");
                auto eval =
                    predicate_->Evaluate(&tuple, nullptr, executor_context_);
-               LOG_DEBUG("Evaluation result: %s", eval.GetInfo().c_str());
+               LOG_TRACE("Evaluation result: %s", eval.GetInfo().c_str());
                if (eval.IsTrue()) {
                  position_list.push_back(tuple_id);
                  auto res = transaction_manager.PerformRead(current_txn, location,
@@ -215,7 +217,8 @@ bool SeqScanExecutor::DExecute() {
          logical_tile->AddPositionList(std::move(position_list));
          query_answered_ = true;
          LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
-                   LOG_DEBUG("Query answered from hot data");
+//                   LOG_DEBUG("Query answered from hot data");
+         SeqScanExecutor::hot_access++;
          SetOutput(logical_tile.release());
          return true;
        }
@@ -325,7 +328,7 @@ bool SeqScanExecutor::DExecute() {
           logical_tile->AddPositionList(std::move(cold_position_list));
           //query_answered_ = true;
          // LOG_DEBUG("Information %s", logical_tile->GetInfo().c_str());
-          LOG_DEBUG("Query answered from cold data");
+//          LOG_DEBUG("Query answered from cold data");
           SetOutput(logical_tile.release());
           return false;
 

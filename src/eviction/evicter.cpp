@@ -23,6 +23,8 @@
 namespace peloton  {
 namespace eviction {
 
+int Evicter::cold_access;
+
 column_map_type types[] = {
     { {0, {0,0}},  {1, {1,0}}, {2, {2,0}}, {3, {2,1}}, {4, {2,2}}, {5, {2,3}}, {6, {2,4}}, {7, {2,5}}, {8, {2,6}}, {9, {2,7}}, {10, {2,8}} },
     { {0, {0,0}},  {1, {1,0}}, {2, {1,1}}, {3, {2,0}}, {4, {2,1}}, {5, {2,2}}, {6, {3,0}}, {7, {3,1}}, {8, {3,2}}, {9, {3,3}}, {10, {3,4}} },
@@ -186,7 +188,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
     size_t buf_size = 512000;
     std::unique_ptr<char[]> buffer(new char[buf_size]);
-
+    Evicter::cold_access++;
 //    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);

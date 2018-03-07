@@ -24,6 +24,8 @@
 #include "settings/settings_manager.h"
 #include "threadpool/mono_queue_pool.h"
 #include "ltm/resource_tracker.h"
+#include "executor/seq_scan_executor.h"
+#include "eviction/evicter.h"
 
 namespace peloton {
 
@@ -39,6 +41,9 @@ void PelotonInit::Initialize() {
   // set max thread number.
   thread_pool.Initialize(0, parallelism);
 
+  executor::SeqScanExecutor::initHotAccess();
+  eviction::Evicter::initColdAccess();
+
   // start worker pool
   threadpool::MonoQueuePool::GetInstance().Startup();
 
@@ -51,7 +56,7 @@ void PelotonInit::Initialize() {
   // start GC.
   gc::GCManagerFactory::GetInstance().StartGC();
 
- // ltm::ResourceTracker::GetInstance().StartRT();
+  ltm::ResourceTracker::GetInstance().StartRT();
 
   // start index tuner
   if (settings::SettingsManager::GetBool(settings::SettingId::index_tuner)) {

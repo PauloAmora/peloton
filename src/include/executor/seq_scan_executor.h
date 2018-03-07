@@ -33,6 +33,11 @@ class SeqScanExecutor : public AbstractScanExecutor {
 
   void ResetState() override { current_tile_group_offset_ = START_OID; }
 
+  static int hot_access;
+
+  static int readHotAccess() { return hot_access; }
+  static void initHotAccess(){hot_access = 0;}
+
  protected:
   bool DInit() override ;
 

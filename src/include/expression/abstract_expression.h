@@ -17,6 +17,7 @@
 #include "common/printable.h"
 #include "type/types.h"
 #include "type/value.h"
+#include "storage/zone_map_manager.h"
 
 namespace peloton {
 
@@ -94,6 +95,9 @@ class AbstractExpression : public Printable {
   inline ExpressionType GetExpressionType() const { return exp_type_; }
 
   inline type::Type::TypeId GetValueType() const { return return_value_type_; }
+
+
+  bool IsZoneMappable();
 
   virtual void DeduceExpressionType() {}
   
@@ -194,6 +198,8 @@ class ExprHasher {
     return expr->Hash();
   }
 };
+
+
 
 }  // End expression namespace
 }  // End peloton namespace

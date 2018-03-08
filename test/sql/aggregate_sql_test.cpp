@@ -42,7 +42,7 @@ TEST_F(AggregateSQLTests, EmptyTableTest) {
 
   // All of these aggregates should return null
   std::vector<std::string> nullAggregates = {"MIN", "MAX", "AVG", "SUM"};
-  std::vector<type::Type::TypeId> expectedTypes = {
+  std::vector<type::Type::Type::TypeId> expectedTypes = {
       type::Type::INTEGER, type::Type::INTEGER, type::Type::DECIMAL,
       type::Type::INTEGER};
   for (int i = 0; i < (int)nullAggregates.size(); i++) {

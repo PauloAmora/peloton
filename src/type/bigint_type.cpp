@@ -310,7 +310,7 @@ Value BigintType::Copy(const Value& val) const {
 
 }
 
-Value BigintType::CastAs(const Value& val, const Type::TypeId type_id) const {
+Value BigintType::CastAs(const Value& val, const Type::Type::TypeId type_id) const {
 
   switch (type_id) {
   case Type::TINYINT: {

@@ -44,7 +44,7 @@ static IndexType index_type = IndexType::BWTREE;
  * BuildIndex()
  */
 index::Index *BuildIndex(IndexType index_type, const bool unique_keys,
-                         std::vector<type::Type::TypeId> col_types) {
+                         std::vector<type::Type::Type::TypeId> col_types) {
   // Build tuple and key schema
   std::vector<catalog::Column> column_list;
   std::vector<oid_t> key_attrs;
@@ -87,7 +87,7 @@ index::Index *BuildIndex(IndexType index_type, const bool unique_keys,
 }
 
 void IndexIntsKeyTestHelper(IndexType index_type,
-                            std::vector<type::Type::TypeId> col_types) {
+                            std::vector<type::Type::Type::TypeId> col_types) {
   auto pool = TestingHarness::GetInstance().GetTestingPool();
   std::vector<ItemPointer *> location_ptrs;
 
@@ -188,44 +188,44 @@ void IndexIntsKeyTestHelper(IndexType index_type,
 }
 
 // TEST_F(IndexIntsKeyTests, SpeedTest) {
-//  std::vector<type::Type::TypeId> col_types = {
+//  std::vector<type::Type::Type::TypeId> col_types = {
 //      type::Type::INTEGER, type::Type::INTEGER, type::Type::INTEGER,
 //  };
 //  IndexIntsKeyTestHelper(IndexType::BWTREE, col_types);
 //}
 
 TEST_F(IndexIntsKeyTests, IndexIntsKeyTest) {
-  std::vector<type::Type::TypeId> types = {
+  std::vector<type::Type::Type::TypeId> types = {
       type::Type::BIGINT, type::Type::INTEGER, type::Type::SMALLINT,
       type::Type::TINYINT};
 
   // ONE COLUMN
-  for (type::Type::TypeId type0 : types) {
-    std::vector<type::Type::TypeId> col_types = {type0};
+  for (type::Type::Type::TypeId type0 : types) {
+    std::vector<type::Type::Type::TypeId> col_types = {type0};
     IndexIntsKeyTestHelper(index_type, col_types);
   }
   // TWO COLUMNS
-  for (type::Type::TypeId type0 : types) {
-    for (type::Type::TypeId type1 : types) {
-      std::vector<type::Type::TypeId> col_types = {type0, type1};
+  for (type::Type::Type::TypeId type0 : types) {
+    for (type::Type::Type::TypeId type1 : types) {
+      std::vector<type::Type::Type::TypeId> col_types = {type0, type1};
       IndexIntsKeyTestHelper(index_type, col_types);
     }
   }
   // THREE COLUMNS
-  for (type::Type::TypeId type0 : types) {
-    for (type::Type::TypeId type1 : types) {
-      for (type::Type::TypeId type2 : types) {
-        std::vector<type::Type::TypeId> col_types = {type0, type1, type2};
+  for (type::Type::Type::TypeId type0 : types) {
+    for (type::Type::Type::TypeId type1 : types) {
+      for (type::Type::Type::TypeId type2 : types) {
+        std::vector<type::Type::Type::TypeId> col_types = {type0, type1, type2};
         IndexIntsKeyTestHelper(index_type, col_types);
       }
     }
   }
   // FOUR COLUMNS
-  for (type::Type::TypeId type0 : types) {
-    for (type::Type::TypeId type1 : types) {
-      for (type::Type::TypeId type2 : types) {
-        for (type::Type::TypeId type3 : types) {
-          std::vector<type::Type::TypeId> col_types = {type0, type1, type2,
+  for (type::Type::Type::TypeId type0 : types) {
+    for (type::Type::Type::TypeId type1 : types) {
+      for (type::Type::Type::TypeId type2 : types) {
+        for (type::Type::Type::TypeId type3 : types) {
+          std::vector<type::Type::Type::TypeId> col_types = {type0, type1, type2,
                                                        type3};
           IndexIntsKeyTestHelper(index_type, col_types);
         }

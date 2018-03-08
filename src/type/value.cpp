@@ -55,7 +55,7 @@ Value &Value::operator=(Value other) {
 // ARRAY is implemented in the header to ease template creation
 
 // BOOLEAN and TINYINT
-Value::Value(Type::TypeId type, int8_t i) : Value(type) {
+Value::Value(Type::Type::TypeId type, int8_t i) : Value(type) {
   switch (type) {
     case Type::BOOLEAN:
       value_.boolean = i;
@@ -98,7 +98,7 @@ Value::Value(Type::TypeId type, int8_t i) : Value(type) {
 }
 
 // SMALLINT
-Value::Value(Type::TypeId type, int16_t i) : Value(type) {
+Value::Value(Type::Type::TypeId type, int16_t i) : Value(type) {
   switch (type) {
     case Type::BOOLEAN:
       value_.boolean = i;
@@ -141,7 +141,7 @@ Value::Value(Type::TypeId type, int16_t i) : Value(type) {
 }
 
 // INTEGER and PARAMETER_OFFSET
-Value::Value(Type::TypeId type, int32_t i) : Value(type) {
+Value::Value(Type::Type::TypeId type, int32_t i) : Value(type) {
   switch (type) {
     case Type::BOOLEAN:
       value_.boolean = i;
@@ -184,7 +184,7 @@ Value::Value(Type::TypeId type, int32_t i) : Value(type) {
 }
 
 // BIGINT and TIMESTAMP
-Value::Value(Type::TypeId type, int64_t i) : Value(type) {
+Value::Value(Type::Type::TypeId type, int64_t i) : Value(type) {
   switch (type) {
     case Type::BOOLEAN:
       value_.boolean = i;
@@ -227,7 +227,7 @@ Value::Value(Type::TypeId type, int64_t i) : Value(type) {
 }
 
 // BIGINT
-Value::Value(Type::TypeId type, uint64_t i) : Value(type) {
+Value::Value(Type::Type::TypeId type, uint64_t i) : Value(type) {
   switch (type) {
     case Type::BOOLEAN:
       value_.boolean = i;
@@ -249,7 +249,7 @@ Value::Value(Type::TypeId type, uint64_t i) : Value(type) {
 }
 
 // DECIMAL
-Value::Value(Type::TypeId type, double d) : Value(type) {
+Value::Value(Type::Type::TypeId type, double d) : Value(type) {
   switch (type) {
     case Type::DECIMAL:
       value_.decimal = d;
@@ -265,7 +265,7 @@ Value::Value(Type::TypeId type, double d) : Value(type) {
   }
 }
 
-Value::Value(Type::TypeId type, float f) : Value(type) {
+Value::Value(Type::Type::TypeId type, float f) : Value(type) {
   switch (type) {
     case Type::DECIMAL:
       value_.decimal = f;
@@ -282,7 +282,7 @@ Value::Value(Type::TypeId type, float f) : Value(type) {
 }
 
 // VARCHAR and VARBINARY
-Value::Value(Type::TypeId type, const char *data, uint32_t len,
+Value::Value(Type::Type::TypeId type, const char *data, uint32_t len,
              bool manage_data)
     : Value(type) {
   switch (type) {
@@ -315,7 +315,7 @@ Value::Value(Type::TypeId type, const char *data, uint32_t len,
   }
 }
 
-Value::Value(Type::TypeId type, const std::string &data) : Value(type) {
+Value::Value(Type::Type::TypeId type, const std::string &data) : Value(type) {
   switch (type) {
     case Type::VARCHAR:
     case Type::VARBINARY: {

@@ -115,7 +115,7 @@ Value BooleanType::Copy(const Value& val) const {
   return Value(type_id_, val.value_.boolean);
 }
 
-Value BooleanType::CastAs(const Value& val, const Type::TypeId type_id) const {
+Value BooleanType::CastAs(const Value& val, const Type::Type::TypeId type_id) const {
   switch (type_id) {
     case Type::BOOLEAN:
       return val.Copy();

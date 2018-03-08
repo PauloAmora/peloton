@@ -216,7 +216,7 @@ Value VarlenType::DeserializeFrom(SerializeInput &in UNUSED_ATTRIBUTE,
 
 Value VarlenType::Copy(const Value &val) const { return Value(val); }
 
-Value VarlenType::CastAs(const Value &val, const Type::TypeId type_id) const {
+Value VarlenType::CastAs(const Value &val, const Type::Type::TypeId type_id) const {
   switch (type_id) {
     case Type::BOOLEAN:
       return ValueFactory::CastAsBoolean(val);

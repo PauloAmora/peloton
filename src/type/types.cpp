@@ -29,7 +29,7 @@ FileHandle INVALID_FILE_HANDLE;
 // WARNING: It will limit scalability if tuples per tile group is too small,
 // When a tile group is full, a new tile group needs to be allocated, until
 // then no new insertion of new versions or tuples are available in the table.
-int DEFAULT_TUPLES_PER_TILEGROUP = 1000;
+int DEFAULT_TUPLES_PER_TILEGROUP = 500;
 int TEST_TUPLES_PER_TILEGROUP = 5;
 
 // For threads
@@ -209,7 +209,7 @@ std::ostream& operator<<(std::ostream& os, const BackendType& type) {
 // Value <--> String Utilities
 //===--------------------------------------------------------------------===//
 
-std::string TypeIdToString(type::Type::TypeId type) {
+std::string TypeIdToString(type::Type::Type::TypeId type) {
   switch (type) {
     case type::Type::INVALID:
       return "INVALID";
@@ -248,7 +248,7 @@ std::string TypeIdToString(type::Type::TypeId type) {
   }
 }
 
-type::Type::TypeId StringToTypeId(const std::string& str) {
+type::Type::Type::TypeId StringToTypeId(const std::string& str) {
   std::string upper_str = StringUtil::Upper(str);
   if (upper_str == "INVALID") {
     return type::Type::INVALID;
@@ -2162,7 +2162,7 @@ std::ostream& operator<<(std::ostream& os, const CheckpointStatus& type) {
   return os;
 }
 
-type::Type::TypeId PostgresValueTypeToPelotonValueType(PostgresValueType type) {
+type::Type::Type::TypeId PostgresValueTypeToPelotonValueType(PostgresValueType type) {
   switch (type) {
     case PostgresValueType::BOOLEAN:
       return type::Type::BOOLEAN;

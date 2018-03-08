@@ -120,6 +120,21 @@ DataTable::~DataTable() {
   // AbstractTable cleans up the schema
 }
 
+
+void DataTable::CompactTgList(){
+      std::vector<oid_t> new_tg_list;
+      for (size_t i = 0; i < tile_groups_.GetSize(); i++){
+          if(tile_groups_.Find(i) != 0){
+              new_tg_list.push_back(tile_groups_.Find(i));
+          }
+      }
+      tile_groups_.Clear(0);
+      for(uint i = 0; i < new_tg_list.size(); i++){
+          tile_groups_.Append(new_tg_list[i]);
+      }
+
+}
+
 //===--------------------------------------------------------------------===//
 // TUPLE HELPER OPERATIONS
 //===--------------------------------------------------------------------===//
@@ -714,7 +729,16 @@ void DataTable::AddTileGroup(const std::shared_ptr<TileGroup> &tile_group) {
   LOG_TRACE("Recording tile group : %u ", tile_group_id);
 }
 
-size_t DataTable::GetTileGroupCount() const { return tile_group_count_; }
+size_t DataTable::GetTileGroupCount() const { return tile_groups_.GetSize(); }
+
+void DataTable::DeleteTileGroup(const std::size_t &tile_group_offset){
+    std::shared_ptr<TileGroup> tg = GetTileGroup(tile_group_offset);
+    tile_groups_.Erase(tile_group_offset,0);
+    catalog::Manager::GetInstance().DropTileGroup(tg->GetTileGroupId());
+    if(active_tile_groups_[number_of_tuples_ % active_tilegroup_count_] == tg)
+        active_tile_groups_[number_of_tuples_ % active_tilegroup_count_].reset();
+    tg.reset();
+}
 
 std::shared_ptr<storage::TileGroup> DataTable::GetTileGroup(
     const std::size_t &tile_group_offset) const {

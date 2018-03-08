@@ -490,7 +490,7 @@ TEST_F(PostgresParserTests, StringUpdateTest) {
       ((expression::ConstantValueExpression *)value)->GetValue().ToString(),
       "2016-11-15 15:07:37");
   EXPECT_EQ(((expression::ConstantValueExpression *)value)->GetValueType(),
-            type::Type::TypeId::VARCHAR);
+            type::Type::Type::TypeId::VARCHAR);
 
   delete stmt_list;
 }

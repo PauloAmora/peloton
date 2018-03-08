@@ -51,7 +51,7 @@ InsertPlan::InsertPlan(
     : bulk_insert_count(insert_values->size()) {
 
   parameter_vector_.reset(new std::vector<std::tuple<oid_t, oid_t, oid_t>>());
-  params_value_type_.reset(new std::vector<type::Type::TypeId>);
+  params_value_type_.reset(new std::vector<type::Type::Type::TypeId>);
 
   target_table_ = table;
 

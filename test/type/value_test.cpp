@@ -25,7 +25,7 @@ namespace test {
 
 class ValueTests : public PelotonTest {};
 
-const std::vector<type::Type::TypeId> valueTestTypes = {
+const std::vector<type::Type::Type::TypeId> valueTestTypes = {
     type::Type::BOOLEAN,   type::Type::TINYINT, type::Type::SMALLINT,
     type::Type::INTEGER,   type::Type::BIGINT,  type::Type::DECIMAL,
     type::Type::TIMESTAMP, type::Type::VARCHAR};

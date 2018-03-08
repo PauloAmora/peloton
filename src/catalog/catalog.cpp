@@ -18,6 +18,7 @@
 #include "catalog/query_metrics_catalog.h"
 #include "catalog/table_metrics_catalog.h"
 #include "catalog/index_metrics_catalog.h"
+#include "catalog/zone_map_catalog.h"
 #include "common/exception.h"
 #include "common/macros.h"
 #include "expression/date_functions.h"
@@ -136,6 +137,8 @@ void Catalog::Bootstrap() {
   TableMetricsCatalog::GetInstance(txn);
   IndexMetricsCatalog::GetInstance(txn);
   QueryMetricsCatalog::GetInstance(txn);
+  ZoneMapCatalog::GetInstance(txn);
+
 
   txn_manager.CommitTransaction(txn);
 }
@@ -851,8 +854,8 @@ storage::Database *Catalog::GetDatabaseWithOffset(oid_t database_offset) const {
 
 void Catalog::AddFunction(
     const std::string &name,
-    const std::vector<type::Type::TypeId> &argument_types,
-    const type::Type::TypeId return_type,
+    const std::vector<type::Type::Type::TypeId> &argument_types,
+    const type::Type::Type::TypeId return_type,
     type::Value (*func_ptr)(const std::vector<type::Value> &)) {
   PL_ASSERT(functions_.count(name) == 0);
   functions_[name] = FunctionData{name, argument_types, return_type, func_ptr};

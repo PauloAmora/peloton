@@ -29,7 +29,7 @@ class TypeUtilTests : public PelotonTest {};
 
 catalog::Schema* TypeUtilTestsGenerateSchema() {
   // Construct Tuple Schema
-  std::vector<type::Type::TypeId> col_types = {
+  std::vector<type::Type::Type::TypeId> col_types = {
       type::Type::BOOLEAN,   type::Type::TINYINT, type::Type::SMALLINT,
       type::Type::INTEGER,   type::Type::BIGINT,  type::Type::DECIMAL,
       type::Type::TIMESTAMP, type::Type::VARCHAR};

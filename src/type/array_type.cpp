@@ -584,13 +584,13 @@ CmpBool ArrayType::CompareGreaterThanEquals(const Value &left,
 }
 
 Value ArrayType::CastAs(const Value &val UNUSED_ATTRIBUTE,
-                        UNUSED_ATTRIBUTE const Type::TypeId type_id) const {
+                        UNUSED_ATTRIBUTE const Type::Type::TypeId type_id) const {
   PL_ASSERT(false);
   throw Exception(EXCEPTION_TYPE_INCOMPATIBLE_TYPE,
                   "Cannot cast array values.");
 }
 
-Type::TypeId ArrayType::GetElementType(
+Type::Type::TypeId ArrayType::GetElementType(
     const Value &val UNUSED_ATTRIBUTE) const {
   return val.size_.elem_type_id;
 }

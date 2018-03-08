@@ -133,6 +133,15 @@ class TileGroupHeader : public Printable {
 
   oid_t GetActiveTupleCount() const;
 
+
+
+  inline bool IsEvictable() {
+    return evicted_;
+  }
+
+  inline void SetEvictable(bool value) {
+    evicted_ = value;
+  }
   //===--------------------------------------------------------------------===//
   // MVCC utilities
   //===--------------------------------------------------------------------===//
@@ -277,6 +286,8 @@ class TileGroupHeader : public Printable {
 
   // number of tuple slots allocated
   oid_t num_tuple_slots;
+
+    bool evicted_;
 
   // next free tuple slot
   // WARNING: this variable may not be the right boundary of the tile

@@ -155,7 +155,7 @@ Value TimestampType::Copy(const Value& val) const {
   return Value(val);
 }
 
-Value TimestampType::CastAs(const Value& val, const Type::TypeId type_id) const {
+Value TimestampType::CastAs(const Value& val, const Type::Type::TypeId type_id) const {
   switch (type_id) {
     case Type::TIMESTAMP:
       return Copy(val);

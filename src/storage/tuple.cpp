@@ -35,7 +35,7 @@ Tuple::~Tuple() {
 type::Value Tuple::GetValue(oid_t column_id) const {
   PL_ASSERT(tuple_schema_);
   PL_ASSERT(tuple_data_);
-  const type::Type::TypeId column_type = tuple_schema_->GetType(column_id);
+  const type::Type::Type::TypeId column_type = tuple_schema_->GetType(column_id);
   const char *data_ptr = GetDataPtr(column_id);
   const bool is_inlined = tuple_schema_->IsInlined(column_id);
   return type::Value::DeserializeFrom(data_ptr, column_type, is_inlined);
@@ -44,7 +44,7 @@ type::Value Tuple::GetValue(oid_t column_id) const {
 // Set all columns by value into this tuple.
 void Tuple::SetValue(const oid_t column_offset, const type::Value &value,
                      type::AbstractPool *data_pool) {
-  const type::Type::TypeId type = tuple_schema_->GetType(column_offset);
+  const type::Type::Type::TypeId type = tuple_schema_->GetType(column_offset);
   LOG_TRACE("c offset: %d; using pool: %p", column_offset, data_pool);
 
   const bool is_inlined = tuple_schema_->IsInlined(column_offset);

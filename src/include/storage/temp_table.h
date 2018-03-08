@@ -30,7 +30,7 @@ class TileGroup;
 class TileGroupHeader;
 
 // FIXME
-const size_t TEMPTABLE_DEFAULT_SIZE = 100;  // # of tuples
+const size_t TEMPTABLE_DEFAULT_SIZE = 500;  // # of tuples
 
 // FIXME
 const oid_t TEMPTABLE_TILEGROUP_ID = 99999;

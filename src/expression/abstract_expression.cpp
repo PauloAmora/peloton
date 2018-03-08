@@ -63,5 +63,12 @@ hash_t AbstractExpression::Hash() const {
   return hash;
 }
 
+
+bool AbstractExpression::IsZoneMappable() {
+  bool is_zone_mappable =
+      ExpressionUtil::GetPredicateForZoneMap(parsed_predicates, this);
+  return is_zone_mappable;
+}
+
 }  // namespace expression
 }  // namespace peloton

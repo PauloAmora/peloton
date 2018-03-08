@@ -1,13 +1,12 @@
-
 //===----------------------------------------------------------------------===//
 //
 //                         Peloton
 //
 // file_util.h
 //
-// Identification: /peloton/src/include/common/file_util.h
+// Identification: /src/include/common/file_util.h
 //
-// Copyright (c) 2015, Carnegie Mellon University Database Group
+// Copyright (c) 2015-17, Carnegie Mellon University Database Group
 //
 //===----------------------------------------------------------------------===//
 
@@ -20,6 +19,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "type/types.h"
+#include <sys/types.h>
+#include <fcntl.h>
 
 namespace peloton {
 
@@ -78,6 +80,31 @@ class FileUtil {
     struct stat buffer;
     return (stat(path.c_str(), &buffer) == 0);
   }
-};
 
-}  // END peloton
+
+ static bool CheckDirectoryExistence(const char *dir_name);
+
+ static bool CreateDirectory(const char *dir_name, int mode);
+
+ static bool RemoveDirectory(const char *dir_name, bool only_remove_file);
+
+ static void FFlushFsync(FileHandle &file_handle);
+
+ static bool CreateFile(const char *complete_path);
+
+ static bool OpenWriteFile(const char *name, const char *mode, FileHandle &file_handle);
+
+ static bool CloseWriteFile(FileHandle &file_handle);
+
+ static bool OpenReadFile(const char *name, FileHandle &file_handle);
+
+ static bool CloseReadFile(FileHandle &file_handle);
+
+ static bool IsFileTruncated(FileHandle &file_handle, size_t size_to_read);
+
+ static size_t GetFileSize(FileHandle &file_handle);
+
+ static bool ReadNBytesFromFile(FileHandle &file_handle, void *bytes_read, size_t n);
+
+};
+}  // namespace peloton

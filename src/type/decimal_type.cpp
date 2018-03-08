@@ -260,7 +260,7 @@ CmpBool DecimalType::CompareGreaterThanEquals(const Value& left, const Value &ri
   throw Exception("type error");
 }
 
-Value DecimalType::CastAs(const Value& val, const Type::TypeId type_id) const {
+Value DecimalType::CastAs(const Value& val, const Type::Type::TypeId type_id) const {
   switch (type_id) {
     case Type::TINYINT: {
       if (val.IsNull()) return ValueFactory::GetNullValueByType(type_id);

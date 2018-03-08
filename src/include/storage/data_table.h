@@ -18,6 +18,7 @@
 #include <queue>
 #include <set>
 
+#include "cuckoofilter/src/cuckoofilter.h"
 #include "common/item_pointer.h"
 #include "common/platform.h"
 #include "container/lock_free_array.h"
@@ -121,6 +122,12 @@ class DataTable : public AbstractTable {
   // aggregate_executor.
   ItemPointer InsertTuple(const Tuple *tuple);
 
+
+  inline std::map<oid_t, cuckoofilter::CuckooFilter<int32_t,12>*> &GetFilterMap() {
+    return filter_map_;
+  }
+
+
   //===--------------------------------------------------------------------===//
   // TILE GROUP
   //===--------------------------------------------------------------------===//
@@ -142,6 +149,11 @@ class DataTable : public AbstractTable {
 
   // Get a tile group with given layout
   TileGroup *GetTileGroupWithLayout(const column_map_type &partitioning);
+
+  void DeleteTileGroup(const std::size_t &tile_group_offset);
+
+  storage::TileGroup *TransformTileGroup(const oid_t &tile_group_offset,
+                                         const column_map_type &theta);
 
   //===--------------------------------------------------------------------===//
   // INDEX
@@ -202,6 +214,8 @@ class DataTable : public AbstractTable {
   bool IsDirty() const;
 
   void ResetDirty();
+
+  void CompactTgList();
 
   //===--------------------------------------------------------------------===//
   // LAYOUT TUNER
@@ -336,6 +350,11 @@ class DataTable : public AbstractTable {
 
   // columns present in the indexes
   std::vector<std::set<oid_t>> indexes_columns_;
+
+  // filters for columns
+  std::map<oid_t, cuckoofilter::CuckooFilter<int32_t, 12>*> filter_map_;
+
+  bool is_catalog;
 
   // CONSTRAINTS
   std::vector<catalog::ForeignKey *> foreign_keys_;

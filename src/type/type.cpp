@@ -354,7 +354,7 @@ Value Type::Copy(const Value& val UNUSED_ATTRIBUTE) const {
 }
 
 Value Type::CastAs(const Value& val UNUSED_ATTRIBUTE,
-                   const Type::TypeId type_id UNUSED_ATTRIBUTE) const {
+                   const Type::Type::TypeId type_id UNUSED_ATTRIBUTE) const {
   std::string msg = StringUtil::Format("CastAs not implemented for type '%s'",
                                        TypeIdToString(type_id_).c_str());
   throw peloton::NotImplementedException(msg);
@@ -391,7 +391,7 @@ Value Type::GetElementAt(const Value& val UNUSED_ATTRIBUTE,
   throw peloton::NotImplementedException(msg);
 }
 
-Type::TypeId Type::GetElementType(const Value& val UNUSED_ATTRIBUTE) const {
+Type::Type::TypeId Type::GetElementType(const Value& val UNUSED_ATTRIBUTE) const {
   return type_id_;
 }
 

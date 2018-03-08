@@ -339,7 +339,7 @@ Value SmallintType::Copy(const Value& val) const {
 }
 
 Value SmallintType::CastAs(const Value& val,
-    const Type::TypeId type_id) const {
+    const Type::Type::TypeId type_id) const {
 
   switch (type_id) {
   case Type::TINYINT: {

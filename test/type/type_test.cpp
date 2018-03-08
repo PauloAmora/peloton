@@ -27,7 +27,7 @@ namespace test {
 
 class TypeTests : public PelotonTest {};
 
-const std::vector<type::Type::TypeId> typeTestTypes = {
+const std::vector<type::Type::Type::TypeId> typeTestTypes = {
     type::Type::BOOLEAN,   type::Type::TINYINT, type::Type::SMALLINT,
     type::Type::INTEGER,   type::Type::BIGINT,  type::Type::DECIMAL,
     type::Type::TIMESTAMP,
@@ -36,7 +36,7 @@ const std::vector<type::Type::TypeId> typeTestTypes = {
 
 TEST_F(TypeTests, InvalidTypeTest) {
   // First get the INVALID type instance
-  type::Type::TypeId type_id = type::Type::INVALID;
+  type::Type::Type::TypeId type_id = type::Type::INVALID;
   auto t = type::Type::GetInstance(type_id);
   EXPECT_NE(nullptr, t);
   EXPECT_EQ(type_id, t->GetTypeId());

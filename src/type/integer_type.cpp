@@ -314,7 +314,7 @@ Value IntegerType::Copy(const Value& val) const {
   return Value(val.GetTypeId(), val.value_.integer);
 }
 
-Value IntegerType::CastAs(const Value& val, const Type::TypeId type_id) const {
+Value IntegerType::CastAs(const Value& val, const Type::Type::TypeId type_id) const {
 
   switch (type_id) {
   case Type::TINYINT: {

@@ -103,7 +103,7 @@ void CheckGreaterThan(type::Value &v1, type::Value &v2) {
 
 // Compare two integers
 template<class T1, class T2>
-void CheckCompare1(T1 x, T2 y, type::Type::TypeId xtype, type::Type::TypeId ytype) {
+void CheckCompare1(T1 x, T2 y, type::Type::Type::TypeId xtype, type::Type::Type::TypeId ytype) {
   type::Value v1 = type::Value(xtype, x);
   type::Value v2 = type::Value(ytype, y);
   if (x == y)
@@ -116,7 +116,7 @@ void CheckCompare1(T1 x, T2 y, type::Type::TypeId xtype, type::Type::TypeId ytyp
 
 // Compare integer and decimal
 template<class T>
-void CheckCompare2(T x, double y, type::Type::TypeId xtype) {
+void CheckCompare2(T x, double y, type::Type::Type::TypeId xtype) {
   type::Value v1 = type::Value(xtype, x);
   type::Value v2 = type::ValueFactory::GetDecimalValue(y);
   if (x == y)
@@ -129,7 +129,7 @@ void CheckCompare2(T x, double y, type::Type::TypeId xtype) {
 
 // Compare decimal and integer
 template<class T>
-void CheckCompare3(double x, T y, type::Type::TypeId ytype) {
+void CheckCompare3(double x, T y, type::Type::Type::TypeId ytype) {
   type::Value v1 = type::ValueFactory::GetDecimalValue(x);
   type::Value v2 = type::Value(ytype, y);
   if (x == y)
@@ -154,7 +154,7 @@ void CheckCompare4(double x, double y) {
 
 // Compare number with varchar
 template<class T>
-void CheckCompare5(T x, T y, type::Type::TypeId xtype) {
+void CheckCompare5(T x, T y, type::Type::Type::TypeId xtype) {
   type::Value v1 = type::Value(xtype, x);
   type::Value v2 = type::ValueFactory::GetVarcharValue(type::Value(xtype, y).ToString());
   if (x == y)
@@ -172,8 +172,8 @@ inline double ValMod(double x, double y) {
 
 // Check the operations of two integers
 template<class T1, class T2>
-void CheckMath1(T1 x, T2 y, type::Type::TypeId xtype, type::Type::TypeId ytype) {
-  type::Type::TypeId maxtype = xtype > ytype? xtype : ytype;
+void CheckMath1(T1 x, T2 y, type::Type::Type::TypeId xtype, type::Type::Type::TypeId ytype) {
+  type::Type::Type::TypeId maxtype = xtype > ytype? xtype : ytype;
   type::Value v1;
   type::Value v2;
   // Test x + y
@@ -273,7 +273,7 @@ void CheckMath1(T1 x, T2 y, type::Type::TypeId xtype, type::Type::TypeId ytype) 
 
 // Check the operations of an integer and a decimal
 template<class T>
-void CheckMath2(T x, double y, type::Type::TypeId xtype) {
+void CheckMath2(T x, double y, type::Type::Type::TypeId xtype) {
   type::Value v1, v2;
   v1 = type::Value(xtype, x).Add(type::ValueFactory::GetDecimalValue(y));
   v2 = type::ValueFactory::GetDecimalValue(x + y);
@@ -310,7 +310,7 @@ void CheckMath2(T x, double y, type::Type::TypeId xtype) {
 
 // Check the operations of a decimal and an integer
 template<class T>
-void CheckMath3(double x, T y, type::Type::TypeId ytype) {
+void CheckMath3(double x, T y, type::Type::Type::TypeId ytype) {
   type::Value v1, v2;
 
   v1 = type::ValueFactory::GetDecimalValue(x).Add(type::Value(ytype, y));
@@ -564,7 +564,7 @@ TEST_F(NumericValueTests, SqrtTest) {
 
 TEST_F(NumericValueTests, CastAsTest) {
 
-  std::vector<type::Type::TypeId> types = {
+  std::vector<type::Type::Type::TypeId> types = {
       type::Type::TINYINT,
       type::Type::SMALLINT,
       type::Type::INTEGER,

@@ -97,8 +97,6 @@ class AbstractExpression : public Printable {
   inline type::Type::TypeId GetValueType() const { return return_value_type_; }
 
 
-  bool IsZoneMappable();
-
   virtual void DeduceExpressionType() {}
   
   // Walks the expressoin trees and generate the correct expression name
@@ -117,6 +115,23 @@ class AbstractExpression : public Printable {
     return (expression == nullptr) ? nullptr : expression->Copy();
   }
 
+  //===----------------------------------------------------------------------===//
+  // Utilities and members for Zone Map consumption.
+  //===----------------------------------------------------------------------===//
+  bool IsZoneMappable();
+
+  size_t GetNumberofParsedPredicates() const {
+    return parsed_predicates.size();
+  }
+
+  const std::vector<storage::PredicateInfo> *GetParsedPredicates() const {
+    return &parsed_predicates;
+  }
+
+  void ClearParsedPredicates() { parsed_predicates.clear(); }
+
+  std::vector<storage::PredicateInfo> parsed_predicates;
+  //===----------------------------------------------------------------------===//
   //===--------------------------------------------------------------------===//
   // Serialization/Deserialization
   // Each sub-class will have to implement this function

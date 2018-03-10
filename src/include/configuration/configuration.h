@@ -64,7 +64,7 @@ DECLARE_uint64(stats_mode);
 // Enable or disable index tuner
 DECLARE_bool(index_tuner);
 
-DECLARE_int32(evict);
+DECLARE_uint64(evict);
 
 // Enable or disable layout tuner
 DECLARE_bool(layout_tuner);

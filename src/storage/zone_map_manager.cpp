@@ -53,9 +53,9 @@ void ZoneMapManager::CreateZoneMapTableInCatalog() {
  *          given table
  * @param   table ptr and a transaction handle
  */
-void ZoneMapManager::CreateZoneMapsForTable(storage::DataTable *table,
-                                            concurrency::TransactionContext *txn) {
-  PL_ASSERT(table != nullptr);
+void ZoneMapManager::CreateZoneMapsForTable(storage::DataTable *table UNUSED_ATTRIBUTE,
+                                            concurrency::Transaction *txn UNUSED_ATTRIBUTE) {
+/*  PL_ASSERT(table != nullptr);
   // Scan over the tile groups, check for immutable flag to be true
   // and keep adding to the zone map catalog
   size_t num_tile_groups = table->GetTileGroupCount();
@@ -69,7 +69,7 @@ void ZoneMapManager::CreateZoneMapsForTable(storage::DataTable *table,
     if (immutable) {
       CreateOrUpdateZoneMapForTileGroup(table, i, txn);
     }
-  }
+  }*/
 }
 
 /**
@@ -79,7 +79,7 @@ void ZoneMapManager::CreateZoneMapsForTable(storage::DataTable *table,
  */
 void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
     storage::DataTable *table, oid_t tile_group_id,
-    concurrency::TransactionContext *txn) {
+    concurrency::Transaction *txn) {
   LOG_DEBUG("Creating Zone Maps for TileGroupId : %u", tile_group_id);
   
   oid_t database_id = table->GetDatabaseOid();
@@ -97,14 +97,14 @@ void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
     oid_t num_tuple_slots = tile_group->GetAllocatedTupleCount();
     for (oid_t tuple_itr = 0; tuple_itr < num_tuple_slots; tuple_itr++) {
       type::Value current_val = tile_group->GetValue(tuple_itr, col_itr);
-      if (current_val.CompareGreaterThan(max) == CmpBool::TRUE) {
+      if (current_val.CompareGreaterThan(max) == type::CmpBool::CMP_TRUE) {
         max = current_val;
       }
-      if (current_val.CompareLessThan(min) == CmpBool::TRUE) {
+      if (current_val.CompareLessThan(min) == type::CmpBool::CMP_TRUE) {
         min = current_val;
       }
     }
-    type::TypeId val_type = min.GetTypeId();
+    type::Type::TypeId val_type = min.GetTypeId();
     std::string converted_min = min.ToString();
     std::string converted_max = max.ToString();
     std::string converted_type = TypeIdToString(val_type);
@@ -123,7 +123,7 @@ void ZoneMapManager::CreateOrUpdateZoneMapForTileGroup(
 void ZoneMapManager::CreateOrUpdateZoneMapInCatalog(
     oid_t database_id, oid_t table_id, oid_t tile_group_id, oid_t column_id,
     std::string min, std::string max, std::string type,
-    concurrency::TransactionContext *txn) {
+    concurrency::Transaction *txn) {
   auto &txn_manager = concurrency::TransactionManagerFactory::GetInstance();
   // Delete and update in a single commit.
   bool single_statement_txn = false;

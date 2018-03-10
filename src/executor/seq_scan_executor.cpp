@@ -12,7 +12,7 @@
 
 #include "executor/seq_scan_executor.h"
 
-#include "common/internal_types.h"
+#include "type/types.h"
 #include "type/value_factory.h"
 #include "executor/logical_tile.h"
 #include "executor/logical_tile_factory.h"
@@ -29,6 +29,7 @@
 #include "storage/tile.h"
 #include "concurrency/transaction_manager_factory.h"
 #include "common/logger.h"
+#include "common/container_tuple.h"
 #include "storage/zone_map_manager.h"
 #include "expression/expression_util.h"
 #include "eviction/evicter.h"
@@ -59,8 +60,6 @@ bool SeqScanExecutor::DInit() {
   target_table_ = node.GetTable();
 
   current_tile_group_offset_ = START_OID;
-
-  old_predicate_ = predicate_;
 
   if (target_table_ != nullptr) {
     table_tile_group_count_ = target_table_->GetTileGroupCount();
@@ -100,7 +99,7 @@ bool SeqScanExecutor::DExecute() {
       if (predicate_ != nullptr) {
         // Invalidate tuples that don't satisfy the predicate.
         for (oid_t tuple_id : *tile) {
-          ContainerTuple<LogicalTile> tuple(tile.get(), tuple_id);
+          expression::ContainerTuple<LogicalTile> tuple(tile.get(), tuple_id);
           auto eval = predicate_->Evaluate(&tuple, nullptr, executor_context_);
           if (eval.IsFalse()) {
             // if (predicate_->Evaluate(&tuple, nullptr, executor_context_)
@@ -182,12 +181,12 @@ bool SeqScanExecutor::DExecute() {
                  return res;
                }
              } else {
-               ContainerTuple<storage::TileGroup> tuple(tile_group.get(),
+               expression::ContainerTuple<storage::TileGroup> tuple(tile_group.get(),
                                                         tuple_id);
                LOG_TRACE("Evaluate predicate for a tuple");
                auto eval =
                    predicate_->Evaluate(&tuple, nullptr, executor_context_);
-               LOG_DEBUG("Evaluation result: %s", eval.GetInfo().c_str());
+               LOG_TRACE("Evaluation result: %s", eval.GetInfo().c_str());
                if (eval.IsTrue()) {
                  position_list.push_back(tuple_id);
                  auto res = transaction_manager.PerformRead(current_txn, location,
@@ -215,13 +214,13 @@ bool SeqScanExecutor::DExecute() {
          logical_tile->AddPositionList(std::move(position_list));
          query_answered_ = true;
          LOG_TRACE("Information %s", logical_tile->GetInfo().c_str());
-                   LOG_DEBUG("Query answered from hot data");
+//                   LOG_DEBUG("Query answered from hot data");
          SetOutput(logical_tile.release());
          return true;
        }
      }
   if(!query_answered_ && predicate_ != nullptr){
-      auto t =  executor_context_->GetParamValues();
+      auto t =  executor_context_->GetParams();
      // LOG_DEBUG("%d", t);
       auto map = target_table_->GetFilterMap().find(0)->second;
       auto status = map->Contain(t[0].GetAs<int>());
@@ -293,7 +292,7 @@ bool SeqScanExecutor::DExecute() {
           for (oid_t tuple_id = 0; tuple_id < cold_active_tuple_count; tuple_id++) {
             ItemPointer location(cold_tg->GetTileGroupId(), tuple_id);
 
-                ContainerTuple<storage::TileGroup> tuple(cold_tg.get(),
+                expression::ContainerTuple<storage::TileGroup> tuple(cold_tg.get(),
                                                          tuple_id);
                 LOG_TRACE("Evaluate predicate for a tuple");
                 auto eval =
@@ -325,7 +324,7 @@ bool SeqScanExecutor::DExecute() {
           logical_tile->AddPositionList(std::move(cold_position_list));
           //query_answered_ = true;
          // LOG_DEBUG("Information %s", logical_tile->GetInfo().c_str());
-          LOG_DEBUG("Query answered from cold data");
+         // LOG_DEBUG("Query answered from cold data");
           SetOutput(logical_tile.release());
           return false;
 
@@ -336,81 +335,6 @@ bool SeqScanExecutor::DExecute() {
   return false;
 }
 
-// Update Predicate expression
-// this is used in the NLJoin executor
-void SeqScanExecutor::UpdatePredicate(const std::vector<oid_t> &column_ids,
-                                      const std::vector<type::Value> &values) {
-  std::vector<oid_t> predicate_column_ids;
 
-  PL_ASSERT(column_ids.size() <= column_ids_.size());
-
-  // columns_ids is the column id
-  // in the join executor, should
-  // convert to the column id in the
-  // seq scan executor
-  for (auto column_id : column_ids) {
-    predicate_column_ids.push_back(column_ids_[column_id]);
-  }
-
-  expression::AbstractExpression *new_predicate =
-      values.size() != 0 ? ColumnsValuesToExpr(predicate_column_ids, values, 0)
-                         : nullptr;
-
-  // combine with original predicate
-  if (old_predicate_ != nullptr) {
-    expression::AbstractExpression *lexpr = new_predicate,
-                                   *rexpr = old_predicate_->Copy();
-
-    new_predicate = new expression::ConjunctionExpression(
-        ExpressionType::CONJUNCTION_AND, lexpr, rexpr);
-  }
-
-  // Currently a hack that prevent memory leak
-  // we should eventually make prediate_ a unique_ptr
-  new_predicate_.reset(new_predicate);
-  predicate_ = new_predicate;
-}
-
-// Transfer a list of equality predicate
-// to a expression tree
-expression::AbstractExpression *SeqScanExecutor::ColumnsValuesToExpr(
-    const std::vector<oid_t> &predicate_column_ids,
-    const std::vector<type::Value> &values, size_t idx) {
-  if (idx + 1 == predicate_column_ids.size())
-    return ColumnValueToCmpExpr(predicate_column_ids[idx], values[idx]);
-
-  // recursively build the expression tree
-  expression::AbstractExpression *lexpr = ColumnValueToCmpExpr(
-                                     predicate_column_ids[idx], values[idx]),
-                                 *rexpr = ColumnsValuesToExpr(
-                                     predicate_column_ids, values, idx + 1);
-
-  expression::AbstractExpression *root_expr =
-      new expression::ConjunctionExpression(ExpressionType::CONJUNCTION_AND,
-                                            lexpr, rexpr);
-
-  root_expr->DeduceExpressionType();
-  return root_expr;
-}
-
-expression::AbstractExpression *SeqScanExecutor::ColumnValueToCmpExpr(
-    const oid_t column_id, const type::Value &value) {
-  expression::AbstractExpression *lexpr =
-      new expression::TupleValueExpression("");
-  reinterpret_cast<expression::TupleValueExpression *>(lexpr)->SetValueType(
-      target_table_->GetSchema()->GetColumn(column_id).GetType());
-  reinterpret_cast<expression::TupleValueExpression *>(lexpr)
-      ->SetValueIdx(column_id);
-
-  expression::AbstractExpression *rexpr =
-      new expression::ConstantValueExpression(value);
-
-  expression::AbstractExpression *root_expr =
-      new expression::ComparisonExpression(ExpressionType::COMPARE_EQUAL, lexpr,
-                                           rexpr);
-
-  root_expr->DeduceExpressionType();
-  return root_expr;
-}
 }  // namespace executor
 }  // namespace peloton

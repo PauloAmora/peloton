@@ -93,6 +93,9 @@ DEFINE_bool(display_configuration,
 DEFINE_uint64(stats_mode,
               peloton::STATS_TYPE_INVALID,
               "Enable statistics collection (default: 0)");
+DEFINE_uint64(evict,
+              4,
+              "Enable statistics collection (default: 0)");
 
 //===----------------------------------------------------------------------===//
 // AI

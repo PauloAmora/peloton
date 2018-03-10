@@ -13,6 +13,7 @@
 #include <string>
 #include "expression/abstract_expression.h"
 #include "util/hash_util.h"
+#include "expression/expression_util.h"
 
 namespace peloton {
 namespace expression {

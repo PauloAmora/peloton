@@ -13,15 +13,14 @@
 #include "executor/drop_executor.h"
 
 #include "catalog/catalog.h"
-#include "catalog/trigger_catalog.h"
 #include "common/logger.h"
-#include "concurrency/transaction_context.h"
+#include "concurrency/transaction.h"
 #include "executor/executor_context.h"
 #include "planner/drop_plan.h"
 #include "eviction/evicter.h"
 #include "storage/tile_group.h"
 #include "storage/tile_group_header.h"
-#include "settings/settings_manager.h"
+#include "gflags/gflags.h"
 
 namespace peloton {
 namespace executor {
@@ -30,7 +29,7 @@ namespace executor {
 DropExecutor::DropExecutor(const planner::AbstractPlan *node,
                            ExecutorContext *executor_context)
     : AbstractExecutor(node, executor_context) {
-  context_ = executor_context;
+  context = executor_context;
 }
 
 // Initialize executer
@@ -51,7 +50,7 @@ bool DropExecutor::DExecute() {
 
   //EVICTER CODE
       auto table_name UNUSED_ATTRIBUTE= node.GetTableName();
-      auto current_txn UNUSED_ATTRIBUTE= context_->GetTransaction();
+      auto current_txn UNUSED_ATTRIBUTE= context->GetTransaction();
       storage::DataTable* table_object = nullptr;
 
 try{
@@ -62,7 +61,7 @@ try{
       }
           auto evicter = new eviction::Evicter();
 
-        double evicts = settings::SettingsManager::GetInt(settings::SettingId::evict);
+        double evicts = FLAGS_evict;//settings::SettingsManager::GetInt(settings::SettingId::evict);
         LOG_DEBUG("EVICTS VALUE --- %f", evicts);
         uint evicts_int = (uint)(table_object->GetTileGroupCount() * (evicts/10));
         LOG_DEBUG("EVICTS VALUE --- %u", evicts_int);

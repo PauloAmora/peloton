@@ -1,7 +1,6 @@
 
 #include "util/file_util.h"
 #include <dirent.h>
-#include <fstream>
 
 namespace peloton {
 

@@ -197,6 +197,9 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
     if(k < 0){
         throw std::logic_error(strerror(errno));
     }
+    char* writebuffer;
+    int writebuffercount = 0;
+    //k = posix_memalign((void**) &buffer, getpagesize(), buf_size);
 //    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
@@ -243,8 +246,12 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
                                 std::to_string(tg_id) + "_" +
                                 std::to_string(tile_id)).c_str(), f);
             int filecounter = 4096;
-
+            writebuffercount = 0;
+            k = posix_memalign((void**) &writebuffer, getpagesize(), f.size);
             FileUtil::ReadNBytesFromFile(f, buffer, 4096);
+            PL_MEMSET(writebuffer+writebuffercount, buffer, 4096);
+            writebuffercount += 4096;
+
             CopySerializeInput num_col_decode((const void *) buffer, 4);
 
             oid_t num_col = num_col_decode.ReadInt();
@@ -253,6 +260,9 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
                 if(filecounter<=0){
                     FileUtil::ReadNBytesFromFile(f, buffer, 4096);
                     filecounter = 4096;
+                    PL_MEMSET(writebuffer+writebuffercount, buffer, 4096);
+                    writebuffercount += 4096;
+
                 }
                 CopySerializeInput tuple_decode((const void *) buffer, num_col * 4);
 
@@ -285,6 +295,12 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             }
 
             FileUtil::CloseReadFile(f);
+            FileUtil::OpenWriteFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
+                                     std::to_string(tg_id) + "_" +
+                                     std::to_string(tile_id)).c_str(), "wb", f);
+            asdasd
+
+
 
         }
 

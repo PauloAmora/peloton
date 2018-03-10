@@ -22,6 +22,7 @@
 #include "type/types.h"
 #include <sys/types.h>
 #include <fcntl.h>
+#include "common/logger.h"
 
 namespace peloton {
 

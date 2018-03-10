@@ -54,6 +54,8 @@ class SeqScanExecutor : public AbstractScanExecutor {
 
   /** @brief Pointer to table to scan from. */
   storage::DataTable *target_table_ = nullptr;
+
+    bool query_answered_ = false;
 };
 
 }  // namespace executor

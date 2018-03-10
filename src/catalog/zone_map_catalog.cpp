@@ -45,7 +45,7 @@ ZoneMapCatalog::ZoneMapCatalog(concurrency::Transaction *txn)
                       "type           VARCHAR);",
                       txn) {
   Catalog::GetInstance()->CreateIndex(
-      CATALOG_DATABASE_NAME, ZONE_MAP_CATALOG_NAME, {"0", "1", "2", "3"},
+      CATALOG_DATABASE_NAME, ZONE_MAP_CATALOG_NAME, {"database_id", "table_id", "tile_group_id", "column_id"},
       ZONE_MAP_CATALOG_NAME "_skey0", true, IndexType::BWTREE, txn);
 
 }

@@ -198,10 +198,10 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
         throw std::logic_error(strerror(errno));
     }
 
-    //char* writebuffer;
+    char* writebuffer;
     //size_t writebuffercount = 0;
     //const size_t pagesize=4096;
-    //k = posix_memalign((void**) &buffer, getpagesize(), buf_size);
+    k = posix_memalign((void**) &writebuffer, getpagesize(), getpagesize());
 //    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
@@ -248,8 +248,8 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
                                 std::to_string(tg_id) + "_" +
                                 std::to_string(tile_id)).c_str(), f);
             int filecounter = 4096;
-            OutputBuffer* bf = new OutputBuffer();
-            CopySerializeOutput out;
+            //OutputBuffer* bf = new OutputBuffer();
+            //CopySerializeOutput out;
 //            writebuffercount = 0;
 //            k = posix_memalign((void**) &writebuffer, getpagesize(), f.size);
             FileUtil::ReadNBytesFromFile(f, buffer, 4096);
@@ -260,7 +260,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             CopySerializeInput num_col_decode((const void *) buffer, 4);
 
             oid_t num_col = num_col_decode.ReadInt();
-            out.WriteInt(num_col);
+            //out.WriteInt(num_col);
             filecounter -= 4;
             for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
                 if(filecounter<=0){
@@ -290,7 +290,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
                         type::Value val = type::Value::DeserializeFrom(
                                     tuple_decode, temp_schema->GetColumn(col_oid).GetType());
                         filecounter -= 4;
-                        val.SerializeTo(out);
+              //          val.SerializeTo(out);
                         offset_current++;
                      //   LOG_DEBUG("VALUE RETRIEVED: %d", val.GetAs<int>());
                         recovered_tuples[tuple_count]->SetValue(col_oid, val);
@@ -303,24 +303,16 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             }
 
             FileUtil::CloseReadFile(f);
-            FileUtil::OpenWriteFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
-                                     std::to_string(tg_id) + "_" +
-                                     std::to_string(tile_id)).c_str(), "wb", f);
+            FileHandle f2;
+            FileUtil::OpenWriteFile((DIR_GLOBAL + "wb").c_str(), "wb", f2);
 
-            bf->WriteData(out.Data(), out.Size());
+            k = write(f2.fd, (const void *) writebuffer, getpagesize());
 
-            uint writesize = bf->GetSize() / getpagesize();
-            ssize_t k = write(f.fd, (const void *) (bf->GetData()), (writesize+1) * getpagesize());
-            if(k !=(ssize_t)(writesize+1) * getpagesize()){
-                throw std::logic_error(strerror(errno));
-            }
 
             //  Call fsync
-                FileUtil::FFlushFsync(f);
-                FileUtil::CloseWriteFile(f);
-                bf->Reset();
-                out.Reset();
-                delete bf;
+                FileUtil::FFlushFsync(f2);
+                FileUtil::CloseWriteFile(f2);
+
 
 
 

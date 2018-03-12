@@ -306,7 +306,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             FileHandle f2;
             FileUtil::OpenWriteFile((DIR_GLOBAL + "wb").c_str(), "wb", f2);
 
-            k = write(f2.fd, (const void *) writebuffer, getpagesize());
+//            k = write(f2.fd, (const void *) writebuffer, getpagesize());
 
 
             //  Call fsync

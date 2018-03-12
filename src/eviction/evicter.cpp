@@ -310,7 +310,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
 
             //  Call fsync
-                FileUtil::FFlushFsync(f2);
+              //  FileUtil::FFlushFsync(f2);
                 FileUtil::CloseWriteFile(f2);
 
 

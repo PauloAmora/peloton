@@ -275,6 +275,8 @@ bool SeqScanExecutor::DExecute() {
           auto evicter = new eviction::Evicter();
           column_ids_.insert(column_ids_.begin(),0);
           auto cold_table = evicter->GetColdData(target_table_->GetOid(),zm_manager->CandidateTileGroups(predicate_array, num_preds, target_table_),column_ids_);
+          delete[] predicate_array;
+          delete evicter;
           auto cold_tg =
               cold_table.GetTileGroup(0);
           std::vector<oid_t> cold_col_ids;

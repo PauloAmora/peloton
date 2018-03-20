@@ -177,7 +177,7 @@ column_map_type DeserializeMap(oid_t table_id, oid_t tg_id) {
     }
 
     FileUtil::CloseReadFile(f);
-
+    delete[] buffer;
     return map_recovered;
 
 }
@@ -318,6 +318,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             }
 
             FileUtil::CloseReadFile(f);
+            delete[] buffer;
            FileHandle f2;
             FileUtil::OpenWriteFile((DIR_GLOBAL + "wb").c_str(), "wb", f2);
 

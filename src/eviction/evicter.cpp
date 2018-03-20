@@ -203,7 +203,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 //    char* writebuffer;
  //   int writebuffercount = 0;
     //k = posix_memalign((void**) &buffer, getpagesize(), buf_size);
-//    }
+    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
         std::vector<std::unique_ptr<storage::Tuple>> recovered_tuples;

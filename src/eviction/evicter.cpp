@@ -53,7 +53,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
         }*/
         for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
-           // table->TransformTileGroup(offset, types[offset%5]);
+            table->TransformTileGroup(offset, types[offset%5]);
             auto tg = table->GetTileGroup(offset);
             if (tg->GetHeader()->IsEvictable()) {
                 if (!FileUtil::CheckDirectoryExistence(
@@ -72,10 +72,12 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
                     }
                 }
                 }
+                if(tg->GetActiveTupleCount() == 500){
                 EvictTileGroup(&tg);
                 zone_map_manager->CreateOrUpdateZoneMapForTileGroup(table, tg->GetTileGroupId(), nullptr);
                 table->DeleteTileGroup(offset);
                 tg.reset();
+                }
             }
 
         }
@@ -191,9 +193,11 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
    // char* num_col_buf;//sizeof(int32_t)
    // posix_memalign((void**) &num_col_buf, getpagesize(), getpagesize());
 
-    size_t buf_size = 512*1024;
+    size_t buf_size = 1024*1024;
     char* buffer;
     int k = posix_memalign((void**) &buffer, getpagesize(), buf_size);
+    //char length_buf[4096];
+    //char col_count[4096];
     if(k < 0){
         throw std::logic_error(strerror(errno));
     }
@@ -247,32 +251,41 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             FileUtil::OpenReadFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
                                 std::to_string(tg_id) + "_" +
                                 std::to_string(tile_id)).c_str(), f);
-            int filecounter = 4096;
+          //  int filecounter = 4096;
             //OutputBuffer* bf = new OutputBuffer();
             //CopySerializeOutput out;
 //            writebuffercount = 0;
 //            k = posix_memalign((void**) &writebuffer, getpagesize(), f.size);
-            FileUtil::ReadNBytesFromFile(f, buffer, 4096);
+            FileUtil::ReadNBytesFromFile(f, buffer, f.size);
+
+            CopySerializeInput length_decode((const void *)buffer, 4);
+            int length = length_decode.ReadInt();
+            //length -= 4;
+            //FileUtil::ReadNBytesFromFile(f, &col_count, 4);
 //            PL_MEMCPY(writebuffer+writebuffercount, buffer, pagesize);
             //PL_MEMSET(writebuffer+writebuffercount, *buffer, pagesize);
          //   writebuffercount += pagesize;
 
-            CopySerializeInput num_col_decode((const void *) buffer, 4);
-
-            oid_t num_col = num_col_decode.ReadInt();
+            //CopySerializeInput num_col_decode((const void *) buffer, 4);
+            //num_col_decode.ReadInt();
             //out.WriteInt(num_col);
-            filecounter -= 4;
+        //    filecounter -= 4;
+             CopySerializeInput tuple_decode((const void *) buffer, length+8);
+             tuple_decode.ReadInt();
+            oid_t num_col = tuple_decode.ReadInt();
+            if(num_col > 11)
+                std::cout << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << std::endl;
             for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
-                if(filecounter<=0){
+               /* if(filecounter<=0){
                     FileUtil::ReadNBytesFromFile(f, buffer, 4096);
                     filecounter = 4096;
 //                    PL_MEMCPY(writebuffer+writebuffercount, buffer, pagesize);
 //                    PL_MEMSET(writebuffer+writebuffercount, *buffer, pagesize);
    //                 writebuffercount += pagesize;
 
-                }
-                CopySerializeInput tuple_decode((const void *) buffer, num_col * 4);
+                }*/
 
+                //tuple_decode.ReadInt();
                 oid_t offset_current = 0;
 
                 for (oid_t i = 0; i < cols_offsets.size(); i++) {
@@ -281,15 +294,19 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
                     //pulando
                     while (offset_current < offset) {
-                        tuple_decode.ReadInt();
-                                    filecounter -= 4;
+                        type::Value val2 = type::Value::DeserializeFrom(
+                                    tuple_decode, temp_schema->GetColumn(col_oid).GetType());
+                       // filecounter -= 104;
                         offset_current++;
                     }
 
                     if (offset_current == offset) {
                         type::Value val = type::Value::DeserializeFrom(
                                     tuple_decode, temp_schema->GetColumn(col_oid).GetType());
-                        filecounter -= 4;
+//                        if(col_oid == 0)
+//                        filecounter -= 4;
+//                        else
+//                            filecounter -= 100;
               //          val.SerializeTo(out);
                         offset_current++;
                      //   LOG_DEBUG("VALUE RETRIEVED: %d", val.GetAs<int>());
@@ -298,6 +315,11 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
                         std::cout << "ERRORRRRRR!!!!!!! offset_current > offset";
                     }
 
+                }
+                oid_t remaining = num_col - offset_current;
+                for (oid_t i = 0; i < remaining; i++) {
+                    type::Value val2 = type::Value::DeserializeFrom(
+                                tuple_decode, type::Type::VARCHAR);
                 }
 
             }
@@ -340,7 +362,8 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
         for (uint offset = 0; offset < (*tg)->GetTileCount(); offset++) {
             auto tile = (*tg)->GetTile(offset);
             auto tile_col_count = tile->GetColumnCount();
-
+            size_t start = output.Position();
+            output.WriteInt(0);
             output.WriteInt(tile_col_count);
             //type::ValueFactory::GetIntegerValue(tile_col_count).SerializeTo(output);
             for (oid_t tuple_offset = 0; tuple_offset < (*tg)->GetActiveTupleCount();
@@ -351,6 +374,8 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
                 }
             }
+            int32_t length = output.Position() - start - sizeof(int32_t);
+            output.WriteIntAt(start, length);
 
 //            tile->SerializeTo(output, (*tg)->GetActiveTupleCount());
 

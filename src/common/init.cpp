@@ -40,9 +40,9 @@ void PelotonInit::Initialize() {
   // set max thread number.
   thread_pool.Initialize(0, std::thread::hardware_concurrency() + 3);
 
-  int parallelism = (std::thread::hardware_concurrency() + 3) / 4;
-  storage::DataTable::SetActiveTileGroupCount(parallelism);
-  storage::DataTable::SetActiveIndirectionArrayCount(parallelism);
+  //int parallelism = (std::thread::hardware_concurrency() + 3) / 4;
+  storage::DataTable::SetActiveTileGroupCount(1);
+  storage::DataTable::SetActiveIndirectionArrayCount(1);
 
   // start epoch.
   concurrency::EpochManagerFactory::GetInstance().StartEpoch();

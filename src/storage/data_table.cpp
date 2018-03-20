@@ -1047,6 +1047,42 @@ storage::TileGroup *DataTable::TransformTileGroup(
   return new_tile_group.get();
 }
 
+storage::TileGroup *DataTable::TransformTileGroup(
+    const oid_t &tile_group_offset, const column_map_type &theta) {
+  // First, check if the tile group is in this table
+
+  auto tile_group_id =
+      tile_groups_.FindValid(tile_group_offset, invalid_tile_group_id);
+
+  // Get orig tile group from catalog
+  auto &catalog_manager = catalog::Manager::GetInstance();
+  auto tile_group = catalog_manager.GetTileGroup(tile_group_id);
+
+  LOG_TRACE("Transforming tile group : %u", tile_group_offset);
+
+  // Get the schema for the new transformed tile group
+  auto new_schema =
+      TransformTileGroupSchema(tile_group.get(), theta);
+
+  // Allocate space for the transformed tile group
+  std::shared_ptr<storage::TileGroup> new_tile_group(
+      TileGroupFactory::GetTileGroup(
+          tile_group->GetDatabaseId(), tile_group->GetTableId(),
+          tile_group->GetTileGroupId(), tile_group->GetAbstractTable(),
+          new_schema, theta,
+          tile_group->GetAllocatedTupleCount()));
+  new_tile_group->GetHeader()->SetEvictable(tile_group->GetHeader()->IsEvictable());
+  // Set the transformed tile group column-at-a-time
+  SetTransformedTileGroup(tile_group.get(), new_tile_group.get());
+
+  // Set the location of the new tile group
+  // and clean up the orig tile group
+  catalog_manager.AddTileGroup(tile_group_id, new_tile_group);
+
+  return new_tile_group.get();
+}
+
+
 void DataTable::RecordLayoutSample(const brain::Sample &sample) {
   // Add layout sample
   {

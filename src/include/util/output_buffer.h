@@ -14,7 +14,7 @@ class OutputBuffer {
 
 private:
   // constant
-  constexpr static size_t buffer_capacity_ = 1024 * 512; // 32 MB
+  constexpr static size_t buffer_capacity_ = 1024 * 1024 * 32; // 32 MB
 
 public:
   OutputBuffer() :

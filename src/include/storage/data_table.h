@@ -154,7 +154,9 @@ class DataTable : public AbstractTable {
 
   storage::TileGroup *TransformTileGroup(const oid_t &tile_group_offset,
                                          const column_map_type &theta);
+  storage::TileGroup *TransformTileGroup22(const oid_t &tile_group_offset,
 
+                                         const column_map_type &theta);
   //===--------------------------------------------------------------------===//
   // INDEX
   //===--------------------------------------------------------------------===//

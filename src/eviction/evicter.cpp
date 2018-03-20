@@ -33,7 +33,7 @@ column_map_type types[] = {
 
 storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list);
     //decidir qual e decidir quando cria-lo??
-    const std::string DIR_GLOBAL = { "/home/paulo/log/" };
+    const std::string DIR_GLOBAL = { "/home/paulo/log_ssd/" };
 
     void Evicter::EvictDataFromTable(storage::DataTable* table) {
         auto zone_map_manager = storage::ZoneMapManager::GetInstance();
@@ -53,8 +53,8 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
         }*/
         for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
-            table->TransformTileGroup(offset, types[offset%5]);
-            auto tg = table->GetTileGroup(offset);
+           table->TransformTileGroup22(offset, types[offset%5]);
+           auto tg = table->GetTileGroup(offset);
             if (tg->GetHeader()->IsEvictable()) {
                 if (!FileUtil::CheckDirectoryExistence(
                             (DIR_GLOBAL + std::to_string(tg->GetTableId())).c_str())){
@@ -200,12 +200,9 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
     //char col_count[4096];
     if(k < 0){
         throw std::logic_error(strerror(errno));
-    }
-
-    char* writebuffer;
-    //size_t writebuffercount = 0;
-    //const size_t pagesize=4096;
-    k = posix_memalign((void**) &writebuffer, getpagesize(), getpagesize());
+//    char* writebuffer;
+ //   int writebuffercount = 0;
+    //k = posix_memalign((void**) &buffer, getpagesize(), buf_size);
 //    }
     for (auto tg_id : tiles_group_id) {
         auto column_map = DeserializeMap(table_id, tg_id);
@@ -251,7 +248,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             FileUtil::OpenReadFile((DIR_GLOBAL + std::to_string(table_id) + "/" +
                                 std::to_string(tg_id) + "_" +
                                 std::to_string(tile_id)).c_str(), f);
-          //  int filecounter = 4096;
+         //  int filecounter = 4096;
             //OutputBuffer* bf = new OutputBuffer();
             //CopySerializeOutput out;
 //            writebuffercount = 0;
@@ -275,14 +272,10 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             oid_t num_col = tuple_decode.ReadInt();
             if(num_col > 11)
                 std::cout << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << std::endl;
-            for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
+           for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
                /* if(filecounter<=0){
                     FileUtil::ReadNBytesFromFile(f, buffer, 4096);
                     filecounter = 4096;
-//                    PL_MEMCPY(writebuffer+writebuffercount, buffer, pagesize);
-//                    PL_MEMSET(writebuffer+writebuffercount, *buffer, pagesize);
-   //                 writebuffercount += pagesize;
-
                 }*/
 
                 //tuple_decode.ReadInt();
@@ -325,7 +318,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             }
 
             FileUtil::CloseReadFile(f);
-            FileHandle f2;
+           FileHandle f2;
             FileUtil::OpenWriteFile((DIR_GLOBAL + "wb").c_str(), "wb", f2);
 
 //            k = write(f2.fd, (const void *) writebuffer, getpagesize());
@@ -334,7 +327,6 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             //  Call fsync
               //  FileUtil::FFlushFsync(f2);
                 FileUtil::CloseWriteFile(f2);
-
 
 
 

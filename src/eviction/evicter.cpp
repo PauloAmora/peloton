@@ -256,7 +256,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             FileUtil::ReadNBytesFromFile(f, buffer, f.size);
 
             CopySerializeInput length_decode((const void *)buffer, 4);
-            int length = length_decode.ReadInt();
+            size_t length = length_decode.ReadInt();
             //length -= 4;
             //FileUtil::ReadNBytesFromFile(f, &col_count, 4);
 //            PL_MEMCPY(writebuffer+writebuffercount, buffer, pagesize);
@@ -267,10 +267,10 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             //num_col_decode.ReadInt();
             //out.WriteInt(num_col);
         //    filecounter -= 4;
-             CopySerializeInput tuple_decode((const void *) buffer, length+8);
-             tuple_decode.ReadInt();
+             CopySerializeInput tuple_decode((const void *)buffer, length+4);
+             size_t len = tuple_decode.ReadInt();
             oid_t num_col = tuple_decode.ReadInt();
-            if(num_col > 11)
+            if(num_col > 11 && len <= 0)
                 std::cout << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << std::endl;
            for (oid_t tuple_count = 0; tuple_count < 500; tuple_count++) {
                /* if(filecounter<=0){
@@ -318,7 +318,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
             }
 
             FileUtil::CloseReadFile(f);
-            delete[] buffer;
+
            FileHandle f2;
             FileUtil::OpenWriteFile((DIR_GLOBAL + "wb").c_str(), "wb", f2);
 
@@ -336,10 +336,12 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
         }
 
+
         for (auto &tuple_ptr : recovered_tuples)
             temp_table.InsertTuple(tuple_ptr.get());
 
     }
+    delete[] buffer;
     return temp_table;
 }
 

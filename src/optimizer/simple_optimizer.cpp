@@ -577,7 +577,7 @@ std::shared_ptr<planner::AbstractPlan> SimpleOptimizer::BuildPelotonPlanTree(
                  : child_DeletePlan->GetPredicate()->Copy());
         LOG_TRACE("Creating a sequential scan plan");
         std::unique_ptr<planner::SeqScanPlan> seq_scan_node(
-            new planner::SeqScanPlan(target_table, scan_expr, {}));
+            new planner::SeqScanPlan(target_table, scan_expr, {}, true));
         LOG_TRACE("Sequential scan plan created");
 
         // Add seq scan plan

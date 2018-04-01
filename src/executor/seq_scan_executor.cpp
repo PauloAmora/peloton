@@ -220,6 +220,8 @@ bool SeqScanExecutor::DExecute() {
        }
      }
   if(!query_answered_ && predicate_ != nullptr){
+      if(((planner::SeqScanPlan*)GetRawNode())->IsForUpdate2())
+          return false;
       auto t =  executor_context_->GetParams();
      // LOG_DEBUG("%d", t);
       auto map = target_table_->GetFilterMap().find(0)->second;

@@ -128,7 +128,7 @@ UpdatePlan::UpdatePlan(const parser::UpdateStatement *parse_tree)
 
   LOG_TRACE("Creating a sequential scan plan");
   std::unique_ptr<planner::SeqScanPlan> seq_scan_node(new planner::SeqScanPlan(
-      target_table_, where_ != nullptr ? where_->Copy() : nullptr, column_ids));
+      target_table_, where_ != nullptr ? where_->Copy() : nullptr, column_ids, true));
   AddChild(std::move(seq_scan_node));
 }
 

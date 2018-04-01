@@ -64,6 +64,11 @@ class AbstractScan : public AbstractPlan {
     // There is some bug with the current select_for_update logic, we need to fix it later -- Jiexi
     return false;
   }
+  inline bool IsForUpdate2() const {
+      return is_for_update;
+
+
+    }
 
  protected:
   // These methods only used by its derived classes (when deserialization)

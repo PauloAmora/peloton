@@ -52,7 +52,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
         //    LOG_DEBUG("--- Tuples in tilegroup %u: %u", tg->GetTileGroupId(), tg->GetActiveTupleCount());
 
         }*/
-        for (uint offset = 0; offset < table->GetTileGroupCount(); offset++) {
+        for (uint offset = 0; offset < table->GetTileGroupCount()-1; offset++) {
            table->TransformTileGroup22(offset, types[offset%5]);
            auto tg = table->GetTileGroup(offset);
             if (tg->GetHeader()->IsEvictable()) {

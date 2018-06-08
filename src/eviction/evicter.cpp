@@ -12,6 +12,7 @@
 #include "concurrency/transaction_manager_factory.h"
 #include "concurrency/transaction_manager.h"
 #include <string>
+#include "ltm/memory_tracker.h"
 
 #include <utility>
 
@@ -34,7 +35,7 @@ column_map_type types[] = {
 storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_group_id, const std::vector<oid_t> &col_index_list);
     //decidir qual e decidir quando cria-lo??
     const std::string DIR_GLOBAL = { "/home/paulo/log_ssd/" };
-
+    auto tracker = ltm::MemoryTracker::GetInstance();
     void Evicter::EvictDataFromTable(storage::DataTable* table) {
         auto zone_map_manager = storage::ZoneMapManager::GetInstance();
         auto schema = table->GetSchema();
@@ -53,7 +54,7 @@ storage::TempTable GetColdData(oid_t table_id, const std::vector<oid_t> &tiles_g
 
         }*/
         for (uint offset = 0; offset < table->GetTileGroupCount()-1; offset++) {
-           table->TransformTileGroup22(offset, types[offset%5]);
+//           table->TransformTileGroup22(offset, types[offset%5]);
            auto tg = table->GetTileGroup(offset);
             if (tg->GetHeader()->IsEvictable()) {
                 if (!FileUtil::CheckDirectoryExistence(
@@ -257,6 +258,7 @@ storage::TempTable Evicter::GetColdData(oid_t table_id, const std::vector<oid_t>
 
             CopySerializeInput length_decode((const void *)buffer, 4);
             size_t length = length_decode.ReadInt();
+            tracker.AddBytes(length);
             //length -= 4;
             //FileUtil::ReadNBytesFromFile(f, &col_count, 4);
 //            PL_MEMCPY(writebuffer+writebuffercount, buffer, pagesize);

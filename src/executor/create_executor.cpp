@@ -14,6 +14,7 @@
 #include "executor/executor_context.h"
 #include "common/logger.h"
 #include "catalog/catalog.h"
+#include "ltm/memory_tracker.h"
 
 #include <vector>
 
@@ -60,8 +61,13 @@ bool CreateExecutor::DExecute() {
     }
   }
 
+  if(node.GetCreateType() == CreateType::INDEX){
+      auto tracker = ltm::MemoryTracker::GetInstance();
+      tracker.FlushBytes();
+
+  }
   // Check if query was for creating index
-  if (node.GetCreateType() == CreateType::INDEX) {
+  /*if (node.GetCreateType() == CreateType::INDEX) {
     std::string table_name = node.GetTableName();
     std::string index_name = node.GetIndexName();
     bool unique_flag = node.IsUnique();
@@ -82,7 +88,7 @@ bool CreateExecutor::DExecute() {
       LOG_TRACE("Result is: %s",
                 ResultTypeToString(current_txn->GetResult()).c_str());
     }
-  }
+  }*/
   return false;
 }
 }

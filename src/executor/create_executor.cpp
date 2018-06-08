@@ -62,7 +62,7 @@ bool CreateExecutor::DExecute() {
   }
 
   if(node.GetCreateType() == CreateType::INDEX){
-      auto tracker = ltm::MemoryTracker::GetInstance();
+      auto& tracker = ltm::MemoryTracker::GetInstance();
       tracker.FlushBytes();
 
   }

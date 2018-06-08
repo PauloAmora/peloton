@@ -15,6 +15,7 @@ class MemoryTracker
 public:
         MemoryTracker(){};
         virtual ~MemoryTracker(){};
+        MemoryTracker(const MemoryTracker &) = delete;
 
         static MemoryTracker& GetInstance(){
                 static MemoryTracker retrieved_data;
